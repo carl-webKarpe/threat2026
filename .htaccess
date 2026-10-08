@@ -1,0 +1,5 @@
+Options -Indexes
+
+<Files "TEMPORARY-LOGIN-CREDENTIALS.txt">
+    Require all denied
+</Files>

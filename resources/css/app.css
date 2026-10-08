@@ -1,0 +1,52 @@
+:root {
+    --ink: #071016;
+    --panel: #0d1a20;
+    --panel-light: #13252b;
+    --mint: #8ef0c4;
+    --signal: #f4c95d;
+    --fog: #aabcc0;
+    --line: rgba(142, 240, 196, 0.16);
+    --display: 'Manrope', sans-serif;
+    --mono: 'DM Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; overflow-x: hidden; background: var(--ink); }
+::selection { color: var(--ink); background: var(--mint); }
+
+.site-nav { transition: background-color .35s ease, border-color .35s ease, box-shadow .35s ease; }
+.site-nav.is-scrolled { background: rgba(7, 16, 22, .88); border-color: rgba(142, 240, 196, .2); box-shadow: 0 10px 40px rgba(0,0,0,.22); backdrop-filter: blur(18px); }
+
+.hero-grid { background-image: linear-gradient(rgba(142,240,196,.065) 1px, transparent 1px), linear-gradient(90deg, rgba(142,240,196,.065) 1px, transparent 1px); background-size: 72px 72px; mask-image: linear-gradient(to bottom, black, transparent 80%); }
+.hero-glow { background: radial-gradient(circle at 72% 35%, rgba(142,240,196,.14), transparent 34%), radial-gradient(circle at 20% 25%, rgba(244,201,93,.08), transparent 28%); }
+
+.particle { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 14px var(--mint); animation: drift 7s ease-in-out infinite; opacity: .65; }
+@keyframes drift { 0%, 100% { transform: translate3d(0, 0, 0); opacity: .25; } 50% { transform: translate3d(18px, -28px, 0); opacity: .8; } }
+
+.shield-stage { position: relative; display: grid; place-items: center; width: min(72vw, 480px); aspect-ratio: 1; }
+.shield-stage::before, .shield-stage::after { content: ''; position: absolute; border: 1px solid var(--line); border-radius: 50%; }
+.shield-stage::before { inset: 5%; animation: spin 18s linear infinite; border-top-color: var(--mint); border-bottom-color: transparent; }
+.shield-stage::after { inset: -3%; animation: spin-reverse 26s linear infinite; border-left-color: rgba(244,201,93,.7); border-right-color: transparent; }
+.shield { position: relative; width: 53%; aspect-ratio: .86; clip-path: polygon(50% 0, 92% 16%, 87% 66%, 50% 100%, 13% 66%, 8% 16%); background: linear-gradient(145deg, rgba(142,240,196,.9), rgba(44,116,99,.35)); filter: drop-shadow(0 0 22px rgba(142,240,196,.3)); animation: shield-pulse 4s ease-in-out infinite; }
+.shield::before { content: ''; position: absolute; inset: 2px; clip-path: inherit; background: linear-gradient(155deg, #172f32, #0a161b 70%); }
+.shield-content { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 8px; z-index: 1; }
+.scan-line { position: absolute; z-index: 2; left: 16%; right: 16%; height: 1px; background: var(--mint); box-shadow: 0 0 14px 2px var(--mint); animation: scan 3.6s ease-in-out infinite; }
+@keyframes scan { 0%, 100% { top: 24%; opacity: 0; } 15%, 75% { opacity: .85; } 50% { top: 73%; } }
+.scan-progress { animation: scan-progress 1.35s ease-in-out infinite; transform-origin: left center; }
+@keyframes scan-progress { 0% { transform: translateX(-100%) scaleX(.35); } 50% { transform: translateX(35%) scaleX(1); } 100% { transform: translateX(200%) scaleX(.35); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin-reverse { to { transform: rotate(-360deg); } }
+@keyframes shield-pulse { 50% { filter: drop-shadow(0 0 34px rgba(142,240,196,.55)); } }
+
+.glass { background: rgba(13, 26, 32, .62); border: 1px solid rgba(142,240,196,.13); backdrop-filter: blur(16px); }
+.feature-card { transition: transform .3s ease, border-color .3s ease, background-color .3s ease; }
+.feature-card:hover { transform: translateY(-7px); border-color: rgba(142,240,196,.4); background: rgba(19,37,43,.9); }
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+.reveal.is-visible { opacity: 1; transform: translateY(0); }
+.counter-value { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    .reveal { opacity: 1; transform: none; }
+}

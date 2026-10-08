@@ -1,0 +1,2 @@
+<?php
+require_once __DIR__ . '/../auth/auth_check.php'; require_superadmin_verification(); $pageTitle = 'System Monitoring'; require_once __DIR__ . '/../includes/header.php'; ?><main class="mx-auto max-w-5xl px-6 py-12"><a href="dashboard.php" class="text-sm text-violet-300">&larr; Dashboard</a><h1 class="mt-8 text-3xl font-bold">System Monitoring</h1><p class="mt-3 text-slate-400">Monitoring events will appear here as system activity is added.</p></main><?php require_once __DIR__ . '/../includes/footer.php'; ?>

@@ -1,0 +1,16 @@
+/config/scanner.local.php
+/config/mail.local.php
+/vendor/
+/composer.phar
+
+/vendor/
+
+# Local secrets
+/config/mail.local.php
+
+# Environment files
+.env
+.env.*
+
+# Uploaded files
+/uploads/*
