@@ -11,7 +11,7 @@ Follow this guide every time new changes are pushed.
 ## Part 1: Get the newest code (do this for every change)
 
 1. Open **Command Prompt** (or Git Bash).
-2. Go to your project folder:
+2. Go to your project folder (use your real path; for example, it may be `C:\xampp1\htdocs\threat2026`):
 
    ```text
    cd C:\xampp\htdocs\threat2026
@@ -38,7 +38,15 @@ Follow this guide every time new changes are pushed.
 
    The top line should match the newest commit in the change log below.
 
-> If `git pull` says *"Your local changes would be overwritten"*, you edited a file that the update also changed. Save a copy of your edits, then run `git stash`, `git pull` and `git stash pop`.
+> If `git checkout` or `git pull` says *"Your local changes to the following files would be overwritten"*, you have edits that were never committed. Save them aside first, then try again:
+>
+> ```text
+> git stash push -m "my edits before update"
+> git checkout claude/hopeful-brahmagupta-zq1g1h
+> git pull
+> ```
+>
+> Your edits are not lost. `git stash list` shows them, and `git stash show -p` prints them. Only run `git stash pop` if you really need them back, because they may clash with the update.
 
 ---
 
