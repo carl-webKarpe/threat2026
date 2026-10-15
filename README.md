@@ -1,5 +1,7 @@
 # MalDetect
 
+**Setting up or updating? Follow [SETUP-GUIDE.md](SETUP-GUIDE.md) step by step.**
+
 MalDetect checks files for malware with the VirusTotal API in two ways:
 
 1. **Upload scanner**: an Admin uploads a file at `admin/scan.php`.
