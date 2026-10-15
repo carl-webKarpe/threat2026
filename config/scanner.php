@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 const MAX_UPLOAD_SIZE = 20 * 1024 * 1024;
 
+/** Minimum seconds between VirusTotal analysis checks for one scan (public API: 4 requests/minute). */
+const SCANNER_STATUS_CHECK_INTERVAL = 20;
+
 const ALLOWED_FILE_TYPES = [
     'pdf' => ['application/pdf'],
     'txt' => ['text/plain'],
@@ -19,6 +22,17 @@ const ALLOWED_FILE_TYPES = [
     'png' => ['image/png'],
     'gif' => ['image/gif'],
     'zip' => ['application/zip'],
+    'rar' => ['application/x-rar', 'application/vnd.rar', 'application/x-rar-compressed'],
+    '7z' => ['application/x-7z-compressed'],
+    // Executables and installers are the most common malicious downloads.
+    'exe' => ['application/x-dosexec', 'application/vnd.microsoft.portable-executable', 'application/x-msdownload'],
+    'dll' => ['application/x-dosexec', 'application/vnd.microsoft.portable-executable', 'application/x-msdownload'],
+    'msi' => ['application/x-msi', 'application/vnd.ms-msi', 'application/x-ole-storage', 'application/CDFV2', 'application/octet-stream'],
+    // Scripts are detected as plain text by libmagic.
+    'bat' => ['text/plain', 'text/x-msdos-batch'],
+    'ps1' => ['text/plain'],
+    'vbs' => ['text/plain'],
+    'js' => ['text/plain', 'application/javascript', 'text/javascript'],
 ];
 
 function scanner_upload_directory(): string

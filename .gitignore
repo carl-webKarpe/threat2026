@@ -14,3 +14,7 @@
 
 # Uploaded files
 /uploads/*
+# Agent secrets and local state (each PC has its own)
+/agent/config.json
+/agent/agent_state.json
+__pycache__/

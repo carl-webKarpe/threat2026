@@ -127,6 +127,13 @@ try {
     }
 
 
+    if (!reserve_superadmin_otp_request($pdo, $userId, $ipAddress)) {
+        $_SESSION['otp_error'] = 'Too many verification code requests. Please wait before trying again.';
+        header('Location: ../superadmin/otp.php');
+        exit;
+    }
+
+
     /*
      * Send new OTP.
      */
@@ -152,12 +159,6 @@ try {
     header('Location: ../superadmin/otp.php');
     exit;
 
-
-    if (!reserve_superadmin_otp_request($pdo, $userId, $ipAddress)) {
-        $_SESSION['otp_error'] = 'Too many verification code requests. Please wait before trying again.';
-        header('Location: ../superadmin/otp.php');
-        exit;
-    }
 
 } catch (Throwable $e) {
 

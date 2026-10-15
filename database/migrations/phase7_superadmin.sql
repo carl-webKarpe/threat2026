@@ -7,7 +7,7 @@ SET @has_last_login := (
 );
 SET @sql := IF(@has_last_login = 0,
     'ALTER TABLE users ADD COLUMN last_login TIMESTAMP NULL AFTER is_active',
-    'SELECT 1');
+    'DO 0');
 PREPARE phase7_stmt FROM @sql;
 EXECUTE phase7_stmt;
 DEALLOCATE PREPARE phase7_stmt;

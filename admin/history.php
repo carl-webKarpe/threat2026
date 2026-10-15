@@ -94,29 +94,3 @@ require_once __DIR__ . '/../includes/header.php';
 	</main>
 </div>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
-?>
-<div class="flex min-h-screen flex-col lg:flex-row">
-	<div><?php require __DIR__ . '/../includes/admin_sidebar.php'; ?></div>
-	<main class="min-w-0 flex-1 p-6 sm:p-10">
-		<p class="mono text-xs tracking-[.2em] text-violet-300">AUDIT TRAIL</p>
-		<h1 class="mt-3 text-3xl font-bold">Scan History</h1>
-		<p class="mt-2 text-slate-400">Real VirusTotal analysis records and engine results.</p>
-		<?php if ($historyError): ?>
-			<div class="mt-8 rounded-2xl border border-red-300/20 bg-red-400/10 p-5 text-sm text-red-200">Scan history is temporarily unavailable.</div>
-		<?php elseif (!$scans): ?>
-			<div class="mt-10 rounded-2xl border border-white/10 bg-white/[.03] p-12 text-center text-slate-500">No scan records are available.</div>
-		<?php else: ?>
-			<div class="mt-8 overflow-x-auto rounded-2xl border border-white/10 bg-white/[.03]">
-				<table class="w-full min-w-[720px] text-left text-sm">
-					<thead class="border-b border-white/10 text-xs uppercase tracking-wider text-slate-500"><tr><th class="px-5 py-4">File</th><th class="px-5 py-4">Result</th><th class="px-5 py-4">Detection</th><th class="px-5 py-4">Status</th><th class="px-5 py-4">Scanned</th></tr></thead>
-					<tbody class="divide-y divide-white/5">
-					<?php foreach ($scans as $scan): ?>
-						<tr class="text-slate-300"><td class="px-5 py-4"><p class="max-w-[220px] truncate font-semibold text-white"><?= htmlspecialchars($scan['original_filename'], ENT_QUOTES, 'UTF-8') ?></p><p class="mt-1 text-xs text-slate-500"><?= htmlspecialchars(scanner_format_size((int) $scan['file_size']), ENT_QUOTES, 'UTF-8') ?></p></td><td class="px-5 py-4"><p class="font-semibold text-white"><?= htmlspecialchars((string) ($scan['scan_result'] ?: 'Not available'), ENT_QUOTES, 'UTF-8') ?></p><p class="mt-1 text-xs text-slate-500"><?= htmlspecialchars((string) ($scan['risk_level'] ?: 'Pending'), ENT_QUOTES, 'UTF-8') ?></p></td><td class="px-5 py-4 text-slate-400"><?= $scan['detection_count'] === null ? 'Not available' : htmlspecialchars((string) $scan['detection_count'] . ' detected', ENT_QUOTES, 'UTF-8') ?><p class="mt-1 max-w-[260px] text-xs text-slate-500"><?= htmlspecialchars((string) ($scan['scan_summary'] ?: $scan['mime_type']), ENT_QUOTES, 'UTF-8') ?></p></td><td class="px-5 py-4"><span class="text-amber-200"><?= htmlspecialchars(ucwords(str_replace('_', ' ', $scan['scan_status'])), ENT_QUOTES, 'UTF-8') ?></span></td><td class="px-5 py-4 whitespace-nowrap text-slate-500"><?= htmlspecialchars($scan['created_at'], ENT_QUOTES, 'UTF-8') ?></td></tr>
-					<?php endforeach; ?>
-					</tbody>
-				</table>
-			</div>
-		<?php endif; ?>
-	</main>
-</div>
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>

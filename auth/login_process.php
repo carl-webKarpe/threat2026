@@ -190,6 +190,8 @@ try {
         $_SESSION['superadmin_verified'] =
             false;
 
+        record_last_login($pdo, (int) $user['id']);
+
         header('Location: ../admin/dashboard.php');
         exit;
     }
@@ -220,6 +222,8 @@ try {
 
         $_SESSION['superadmin_verified'] =
             false;
+
+        record_last_login($pdo, (int) $user['id']);
 
         header('Location: ../user/dashboard.php');
         exit;

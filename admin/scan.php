@@ -28,9 +28,9 @@ require_once __DIR__ . '/../includes/header.php';
 					<p class="mt-2 text-sm text-slate-500">or</p>
 					<label class="mt-4 inline-flex cursor-pointer items-center rounded-xl bg-violet-300 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-violet-200">
 						Browse File
-						<input id="file-input" class="sr-only" type="file" name="file" accept=".pdf,.txt,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.zip">
+						<input id="file-input" class="sr-only" type="file" name="file" accept="<?= htmlspecialchars('.' . implode(',.', scanner_allowed_extensions()), ENT_QUOTES, 'UTF-8') ?>">
 					</label>
-					<p class="mt-5 text-xs text-slate-500">Maximum <?= htmlspecialchars(scanner_format_size(MAX_UPLOAD_SIZE), ENT_QUOTES, 'UTF-8') ?>. Supported documents, images, and ZIP archives.</p>
+					<p class="mt-5 text-xs text-slate-500">Maximum <?= htmlspecialchars(scanner_format_size(MAX_UPLOAD_SIZE), ENT_QUOTES, 'UTF-8') ?>. Supported documents, images, archives, executables, and scripts.</p>
 					<label class="mx-auto mt-6 flex max-w-xl items-start gap-3 text-left text-xs text-slate-400"><input id="privacy-acknowledged" class="mt-0.5" type="checkbox"><span>I understand that this file will be submitted to VirusTotal for analysis and may be shared according to VirusTotal policies.</span></label>
 				</div>
 
@@ -96,6 +96,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	const privacyAcknowledged = document.querySelector('#privacy-acknowledged');
 	const statusUrl = '../scanner/status.php';
 	const activeScanStorageKey = 'maldetect_active_scan';
+	// VirusTotal's public API allows 4 requests per minute; the server also throttles checks.
+	const pollIntervalMs = <?= (int) SCANNER_STATUS_CHECK_INTERVAL * 1000 ?>;
+	const rateLimitRetryMs = 60000;
+	const maxScanWaitMs = 600000;
 	let selectedFile = null;
 	let pollTimer = null;
 	let pollInFlight = false;
@@ -115,29 +119,30 @@ document.addEventListener('DOMContentLoaded', () => {
 	const restoreUpload = () => { form.classList.remove('hidden'); const button = document.querySelector('#upload-button'); button.disabled = false; button.textContent = 'Upload & Scan'; };
 	const showResult = (scan) => {
 		stopPolling(); window.localStorage.removeItem(activeScanStorageKey); loading.classList.add('hidden'); result.classList.remove('hidden');
-		result.querySelector('#result-headline').textContent = scan.result === 'MALICIOUS' ? 'Threat Detected' : scan.result === 'NO_THREAT_DETECTED' ? 'No Threat Detected' : 'Analysis Complete';
+		result.querySelector('#result-headline').textContent = scan.result === 'MALICIOUS' ? 'Threat Detected' : scan.result === 'SUSPICIOUS' ? 'Suspicious File' : scan.result === 'NO_THREAT_DETECTED' ? 'No Threat Detected' : 'Analysis Complete';
 		Object.entries(scan).forEach(([key, value]) => { const target = result.querySelector(`[data-result="${key}"]`); if (target) target.textContent = value ?? 'Not provided'; });
 		const safety = result.querySelector('[data-result="safety_percentage"]');
 		if (safety && scan.safety_percentage !== null && scan.safety_percentage !== undefined) safety.textContent = `${Number(scan.safety_percentage).toFixed(2)}% (application-derived)`;
 	};
 	const pollStatus = async (scanId) => {
 		if (pollInFlight) return;
-		if (Date.now() - scanStartedAt > 300000) { stopPolling(); setLoading('VirusTotal is taking longer than expected. Your scan is still being processed.'); showError('The scan is still processing. Check Scan History for updates.'); return; }
+		if (Date.now() - scanStartedAt > maxScanWaitMs) { stopPolling(); setLoading('VirusTotal is taking longer than expected. Your scan is still being processed.'); showError('The scan is still processing. Check Scan History for updates.'); return; }
 		pollInFlight = true;
 		try {
 			const response = await fetch(`${statusUrl}?id=${encodeURIComponent(scanId)}`, { headers: { Accept: 'application/json' } });
 			const payload = await response.json();
-			if (response.status === 429) { stopPolling(); window.localStorage.removeItem(activeScanStorageKey); setLoading('VirusTotal request limit reached. Please try again later.'); showError('VirusTotal request limit reached. Please try again later.'); return; }
+			if (response.status === 429) { setLoading('VirusTotal request limit reached. Retrying in one minute...'); pollTimer = window.setTimeout(() => pollStatus(scanId), rateLimitRetryMs); return; }
 			if (!response.ok || !payload.success) throw new Error(payload.message || 'Unable to retrieve scan status.');
 			const scan = payload.scan;
 			if (scan.status === 'completed') { setLoading('Finalizing scan results...'); showResult(scan); return; }
 			if (scan.status === 'failed') { stopPolling(); window.localStorage.removeItem(activeScanStorageKey); loading.classList.add('hidden'); restoreUpload(); showError(scan.summary || 'Unable to complete the malware analysis. Please try again.'); return; }
+			showError('');
 			loadingMessage.textContent = scan.status === 'queued' ? 'Uploading file for analysis...' : 'Checking security engines...';
-			pollTimer = window.setTimeout(() => pollStatus(scanId), 2500);
+			pollTimer = window.setTimeout(() => pollStatus(scanId), pollIntervalMs);
 		} catch (statusError) {
 			loadingMessage.textContent = 'Connection interrupted. Checking scan status...';
 			showError('Connection interrupted. Checking scan status...');
-			pollTimer = window.setTimeout(() => pollStatus(scanId), 2500);
+			pollTimer = window.setTimeout(() => pollStatus(scanId), pollIntervalMs);
 		} finally {
 			pollInFlight = false;
 		}

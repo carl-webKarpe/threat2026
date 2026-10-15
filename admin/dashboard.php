@@ -41,6 +41,26 @@ try {
     $dashboardError = true;
 }
 
+// Device statistics need the Phase 9 tables; the rest of the dashboard works without them.
+$deviceStatistics = null;
+$recentThreats = [];
+try {
+    $deviceStatistics = $pdo->query(
+        "SELECT (SELECT COUNT(*) FROM devices WHERE is_active = 1) AS devices,
+                (SELECT COUNT(*) FROM devices WHERE is_active = 1 AND last_seen_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)) AS online,
+                (SELECT COUNT(*) FROM device_detections WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)) AS downloads,
+                (SELECT COUNT(*) FROM device_detections WHERE scan_result IN ('MALICIOUS', 'SUSPICIOUS') AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)) AS threats"
+    )->fetch() ?: null;
+    $recentThreats = $pdo->query(
+        "SELECT device_detections.file_name, device_detections.risk_level, device_detections.threat_name, device_detections.created_at, devices.name AS device_name
+         FROM device_detections INNER JOIN devices ON devices.id = device_detections.device_id
+         WHERE device_detections.scan_result IN ('MALICIOUS', 'SUSPICIOUS')
+         ORDER BY device_detections.created_at DESC LIMIT 5"
+    )->fetchAll();
+} catch (Throwable $exception) {
+    error_log('Device statistics unavailable: ' . $exception->getMessage());
+}
+
 $pageTitle = 'Admin Dashboard';
 $basePath = '..';
 $currentPage = 'dashboard';
@@ -54,6 +74,15 @@ require_once __DIR__ . '/../includes/header.php';
         <section class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <?php foreach ([['Total Scans', 'total', 'text-violet-200'], ['Completed', 'completed', 'text-emerald-300'], ['Scanning', 'scanning', 'text-amber-300'], ['Failed', 'failed', 'text-red-300'], ['Malicious', 'malicious', 'text-red-300'], ['Suspicious', 'suspicious', 'text-amber-300'], ['No Threat Detected', 'no_threat', 'text-emerald-300']] as [$label, $key, $color]): ?><article class="rounded-2xl border border-white/10 bg-white/[.04] p-6"><p class="text-sm text-slate-400"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></p><p class="mt-5 text-4xl font-bold <?= $color ?>"><?= $statistics[$key] ?></p><p class="mt-3 mono text-[10px] uppercase tracking-wider text-slate-600">Live database count</p></article><?php endforeach; ?>
         </section>
+        <?php if ($deviceStatistics !== null): ?>
+        <section class="mt-8 rounded-2xl border border-white/10 bg-white/[.03] p-6 sm:p-8">
+            <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><p class="mono text-xs tracking-[.18em] text-slate-500">ENDPOINT AGENTS</p><h2 class="mt-2 text-xl font-bold">Device Downloads</h2></div><a class="text-sm text-violet-300 hover:text-white" href="detections.php">View detections</a></div>
+            <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <?php foreach ([['Active Devices', 'devices', 'text-violet-200'], ['Online Now', 'online', 'text-emerald-300'], ['Downloads (24h)', 'downloads', 'text-slate-200'], ['Threats (24h)', 'threats', 'text-red-300']] as [$label, $key, $color]): ?><article class="rounded-2xl border border-white/10 bg-white/[.04] p-5"><p class="text-sm text-slate-400"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></p><p class="mt-3 text-3xl font-bold <?= $color ?>"><?= (int) $deviceStatistics[$key] ?></p></article><?php endforeach; ?>
+            </div>
+            <?php if ($recentThreats): ?><ul class="mt-6 divide-y divide-white/5 text-sm"><?php foreach ($recentThreats as $threat): ?><li class="flex flex-col justify-between gap-1 py-3 sm:flex-row"><span><strong class="text-red-300"><?= htmlspecialchars((string) $threat['risk_level'], ENT_QUOTES, 'UTF-8') ?></strong> · <?= htmlspecialchars($threat['file_name'], ENT_QUOTES, 'UTF-8') ?> <span class="text-slate-500">on <?= htmlspecialchars($threat['device_name'], ENT_QUOTES, 'UTF-8') ?></span></span><span class="text-slate-500"><?= htmlspecialchars($threat['created_at'], ENT_QUOTES, 'UTF-8') ?></span></li><?php endforeach; ?></ul><?php endif; ?>
+        </section>
+        <?php endif; ?>
         <section class="mt-8 rounded-2xl border border-white/10 bg-white/[.03] p-6 sm:p-8"><div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><p class="mono text-xs tracking-[.18em] text-slate-500">ACTIVITY FEED</p><h2 class="mt-2 text-xl font-bold">Recent Scan Activity</h2></div><a class="text-sm text-violet-300 hover:text-white" href="history.php">View history</a></div>
             <?php if (!$recentScans): ?><div class="mt-8 rounded-xl border border-dashed border-white/10 px-6 py-12 text-center text-slate-500">No scans have been performed.</div><?php else: ?><div class="mt-6 overflow-x-auto"><table class="w-full min-w-[620px] text-left text-sm"><thead class="border-b border-white/10 text-xs uppercase tracking-wider text-slate-500"><tr><th class="px-4 py-3">File</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Risk</th><th class="px-4 py-3">Date</th><th class="px-4 py-3">Action</th></tr></thead><tbody class="divide-y divide-white/5"><?php foreach ($recentScans as $scan): ?><tr><td class="max-w-[220px] truncate px-4 py-4 font-semibold text-white"><?= htmlspecialchars($scan['original_filename'], ENT_QUOTES, 'UTF-8') ?></td><td class="px-4 py-4 text-amber-200"><?= htmlspecialchars(ucfirst($scan['scan_status']), ENT_QUOTES, 'UTF-8') ?></td><td class="px-4 py-4 text-slate-300"><?= htmlspecialchars((string) ($scan['risk_level'] ?: 'Pending'), ENT_QUOTES, 'UTF-8') ?></td><td class="whitespace-nowrap px-4 py-4 text-slate-500"><?= htmlspecialchars($scan['created_at'], ENT_QUOTES, 'UTF-8') ?></td><td class="px-4 py-4"><a class="text-violet-300 hover:text-white" href="view_scan.php?id=<?= (int) $scan['id'] ?>">View</a></td></tr><?php endforeach; ?></tbody></table></div><?php endif; ?>
         </section>

@@ -10,7 +10,7 @@ The standalone XAMPP implementation now includes the Phase 2 role flow:
 - Protected pages use `auth/auth_check.php` and `auth/role_check.php`.
 - The database setup is available in `database/phase2_standalone.sql`.
 
-For the standalone version, import `database/phase2_standalone.sql` in phpMyAdmin, then open:
+For a new install, run `database/maldetect_full_install.sql` (MySQL Workbench or phpMyAdmin), then open:
 
 ```text
 http://localhost/threat2026/login.php
@@ -38,5 +38,4 @@ Import `database/migrations/phase4_scans.sql` once if the existing Phase 3 `scan
 
 The official endpoints are `POST https://www.virustotal.com/api/v3/files` and `GET https://www.virustotal.com/api/v3/analyses/{id}`. Uploads are sent to VirusTotal for third-party analysis. The public API documentation states a limit of four requests per minute; the scanner therefore polls every 20 seconds and supports files up to 20 MB, below VirusTotal's documented 32 MB direct-upload limit. Public API use is subject to VirusTotal's terms and is intended for free consumer applications, not commercial products.
 
-Results are derived from the returned engine statistics: any malicious detection produces `MALICIOUS/HIGH`, otherwise any suspicious detection produces `SUSPICIOUS/MEDIUM`, otherwise a completed scan with harmless detections and no malicious or suspicious detections produces `SAFE/LOW`; incomplete or unrecognized statistics remain `UNKNOWN`. No safety percentage is fabricated.
-
+Results are derived from the returned engine statistics. See the "Scan results" section in [README.md](README.md).

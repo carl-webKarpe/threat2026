@@ -64,6 +64,16 @@ function require_superadmin_verification(): void
     }
 }
 
+function record_last_login(PDO $pdo, int $userId): void
+{
+    try {
+        $statement = $pdo->prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = :id');
+        $statement->execute(['id' => $userId]);
+    } catch (Throwable $exception) {
+        error_log('Last login update failed: ' . $exception->getMessage());
+    }
+}
+
 function current_user(): array
 {
     start_secure_session();

@@ -226,11 +226,19 @@ try {
         } else {
             error_log($apiException->getMessage());
         }
+        if (is_file($storedPath)) {
+            unlink($storedPath);
+        }
         $response = [
             'success' => false,
             'message' => 'Unable to start the malware analysis. Please try again.',
         ];
         scanner_json_response($response, 502);
+    }
+
+    // VirusTotal now holds the file (or already had it), so the local copy is no longer needed.
+    if (is_file($storedPath)) {
+        unlink($storedPath);
     }
 } catch (Throwable $exception) {
     if (is_file($storedPath)) {
@@ -252,6 +260,6 @@ scanner_json_response([
         'size' => scanner_format_size($fileSize),
         'mime_type' => $mimeType,
         'sha256' => $hash,
-        'status' => 'scanning',
+        'status' => $existingReport !== null ? 'completed' : 'scanning',
     ],
 ]);

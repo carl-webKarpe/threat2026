@@ -42,7 +42,13 @@ if (!$scan) {
     scanner_status_response(['success' => false, 'message' => 'Scan not found.'], 404);
 }
 
-if ($scan['scan_status'] === 'scanning' && is_string($scan['analysis_id']) && $scan['analysis_id'] !== '') {
+// The public VirusTotal API allows only 4 requests per minute, so each scan is
+// checked against VirusTotal at most once per SCANNER_STATUS_CHECK_INTERVAL seconds.
+$lastCheckedAt = (int) ($_SESSION['scanner_last_check'][$scanId] ?? 0);
+$checkIsDue = time() - $lastCheckedAt >= SCANNER_STATUS_CHECK_INTERVAL;
+
+if ($scan['scan_status'] === 'scanning' && $checkIsDue && is_string($scan['analysis_id']) && $scan['analysis_id'] !== '') {
+    $_SESSION['scanner_last_check'][$scanId] = time();
     try {
         $analysis = virustotal_analysis($scan['analysis_id']);
         $attributes = $analysis['data']['attributes'] ?? null;
@@ -74,6 +80,7 @@ if ($scan['scan_status'] === 'scanning' && is_string($scan['analysis_id']) && $s
                 'user_id' => $userId,
             ]);
             $scan = array_merge($scan, $interpreted, ['scan_status' => 'completed']);
+            unset($_SESSION['scanner_last_check'][$scanId]);
         } elseif (in_array($apiStatus, ['queued', 'in-progress'], true)) {
             $scan['scan_status'] = 'scanning';
         } else {

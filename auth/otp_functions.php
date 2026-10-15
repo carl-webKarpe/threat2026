@@ -292,7 +292,7 @@ function sendSuperadminOtp(
         try {
             $delete = $pdo->prepare("
                 DELETE FROM superadmin_otps
-                WHERE id = 
+                WHERE id = ?
             ");
             $delete->execute([$otpId]);
         } catch (Throwable $cleanupError) {

@@ -6,6 +6,8 @@ $links = [
     'dashboard' => ['Dashboard', 'dashboard.php'],
     'scan' => ['Scan File', 'scan.php'],
     'history' => ['Scan History', 'history.php'],
+    'devices' => ['Devices', 'devices.php'],
+    'detections' => ['Device Detections', 'detections.php'],
     'users' => ['Users', 'users.php'],
 ];
 ?>

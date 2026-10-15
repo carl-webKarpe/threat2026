@@ -1,0 +1,11 @@
+{
+    "server_url": "http://192.168.1.10/threat2026",
+    "device_token": "mdt_paste_the_token_from_Admin_Devices_here",
+    "watch_dirs": [],
+    "poll_seconds": 5,
+    "heartbeat_seconds": 60,
+    "result_poll_seconds": 30,
+    "upload_unknown_files": true,
+    "report_existing_files": false,
+    "verify_tls": true
+}

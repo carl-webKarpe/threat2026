@@ -312,6 +312,8 @@ try {
     );
 
 
+    record_last_login($pdo, (int) $user['id']);
+
     /*
      * Redirect to Superadmin dashboard.
      */
