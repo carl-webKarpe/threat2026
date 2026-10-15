@@ -174,6 +174,23 @@ SHOW TABLES LIKE 'device%';
 
 **Step 6: Set up a PC to watch (optional, for download detection).** Follow Part 4.
 
+### Change 2: MySQL password setting file
+
+**What changed:** if your MySQL `root` user has a password, you can now put it in a private file. Before, PHP always tried an empty password.
+
+**SQL to run:** none.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Only if your MySQL root user has a password** (Workbench asks for it when you open the connection):
+
+1. In `C:\xampp1\htdocs\threat2026\config\`, copy `database.local.example.php` and name the copy `database.local.php`.
+2. Open it in Notepad and replace `YOUR_MYSQL_PASSWORD` with your MySQL root password, then save.
+
+   Git never uploads this file, so your password stays on your laptop.
+
+**Step 3: Test.** Open `http://localhost/threat2026/login.php` and sign in as `admin` / `ChangeMe123!`. If it says "Unable to complete login", the password in `database.local.php` is wrong.
+
 ---
 
 ## Part 4: Set up download detection on another PC

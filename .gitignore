@@ -1,5 +1,6 @@
 /config/scanner.local.php
 /config/mail.local.php
+/config/database.local.php
 /vendor/
 /composer.phar
 
@@ -7,6 +8,7 @@
 
 # Local secrets
 /config/mail.local.php
+/config/database.local.php
 
 # Environment files
 .env
