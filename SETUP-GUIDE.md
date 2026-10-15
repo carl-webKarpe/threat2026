@@ -191,6 +191,28 @@ SHOW TABLES LIKE 'device%';
 
 **Step 3: Test.** Open `http://localhost/threat2026/login.php` and sign in as `admin` / `ChangeMe123!`. If it says "Unable to complete login", the password in `database.local.php` is wrong.
 
+### Change 3: Admin and User can log in without Composer
+
+**What changed:** on a new laptop the `vendor` folder (the email library) is missing, and before this change the login page broke for every account. Now Admin and User log in without it. Only the Superadmin needs it, for the email code.
+
+**SQL to run:** none.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Test.** Sign in as `admin` / `ChangeMe123!`.
+
+**Step 3: Only for the Superadmin login,** install the email library once:
+
+1. Install Composer from https://getcomposer.org/Composer-Setup.exe. When it asks for PHP, choose `C:\xampp1\php\php.exe`.
+2. Open a new Command Prompt and run:
+
+   ```text
+   cd C:\xampp1\htdocs\threat2026
+   composer install
+   ```
+
+3. Set up `config\mail.local.php` with your Gmail App Password (see `PHASE-2-SETUP.md`).
+
 ---
 
 ## Part 4: Set up download detection on another PC

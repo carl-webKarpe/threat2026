@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 use PHPMailer\PHPMailer\PHPMailer;
 
-require_once __DIR__ . '/../vendor/autoload.php';
+// PHPMailer is only needed for the Superadmin email OTP. Admin and User logins
+// must keep working on a fresh checkout where `composer install` has not been run.
+$composerAutoload = __DIR__ . '/../vendor/autoload.php';
+if (is_file($composerAutoload)) {
+    require_once $composerAutoload;
+}
 require_once __DIR__ . '/../config/database.php';
 
 /**
@@ -97,6 +102,10 @@ function sendSuperadminOtp(
         throw new RuntimeException(
             'The Superadmin account does not have a valid email address.'
         );
+    }
+
+    if (!class_exists(PHPMailer::class)) {
+        throw new RuntimeException('PHPMailer is not installed. Run composer install in the project folder.');
     }
 
     $mailConfig = getMailConfig();
