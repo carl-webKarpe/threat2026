@@ -452,6 +452,18 @@ Alerts are sent with the same Gmail settings as the Superadmin code (`config\mai
 3. Click the file name: the **Detection Details** page opens. Try **Print Detection Details**.
 4. To test an alert email, download the EICAR test file (https://www.eicar.org/download-anti-malware-testfile/) on the monitored laptop. It is harmless, but VirusTotal reports it as malicious. Windows Defender may delete it first; if so, allow it in **Windows Security > Protection history** only on the test laptop. Within a minute you get a **"MalDetect alert: Malicious file on …"** email, and the details page shows **Admin Alert Email: Sent**.
 
+### Change 10: Delete a device
+
+**What changed:** each device on the **Devices** page has a red **Delete** action. It asks for confirmation first, then removes the device **together with all its detections and scan history**. The agent on that PC can no longer connect (it gets `HTTP 401`).
+
+Use **Disable** instead if you only want to stop a device for now and keep its history.
+
+**SQL to run:** none.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Test.** On **Devices**, click **Delete** on a device you do not need (for example one that says *Agent not connected yet*). Click **Cancel** first (nothing happens), then **Delete** again and **OK**. A green message confirms it was deleted.
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)

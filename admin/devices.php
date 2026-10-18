@@ -38,6 +38,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $name = $pdo->prepare('SELECT name FROM devices WHERE id = :id');
                 $name->execute(['id' => $deviceId]);
                 $_SESSION['device_token_flash'] = ['name' => (string) $name->fetchColumn(), 'token' => $token['token']];
+            } elseif ($action === 'delete' && is_int($deviceId)) {
+                // Detections and scan commands of the device are removed with it (ON DELETE CASCADE).
+                $device = $pdo->prepare('SELECT name FROM devices WHERE id = :id');
+                $device->execute(['id' => $deviceId]);
+                $name = $device->fetchColumn();
+                if ($name === false) {
+                    throw new InvalidArgumentException('Device not found.');
+                }
+                $delete = $pdo->prepare('DELETE FROM devices WHERE id = :id');
+                $delete->execute(['id' => $deviceId]);
+                $_SESSION['device_flash'] = 'Device ' . $name . ' and its detections were deleted. Its agent can no longer connect.';
             } elseif ($action === 'scan' && is_int($deviceId)) {
                 $device = $pdo->prepare('SELECT name, is_active FROM devices WHERE id = :id');
                 $device->execute(['id' => $deviceId]);
@@ -182,6 +193,7 @@ require_once __DIR__ . '/../includes/header.php';
 							<?php if ($commandsAvailable && (int) $device['is_active']): ?><form method="post"><input type="hidden" name="csrf_token" value="<?= $h(csrf_token()) ?>"><input type="hidden" name="id" value="<?= (int) $device['id'] ?>"><input type="hidden" name="action" value="scan"><button class="font-semibold text-emerald-300 hover:text-white">Scan Downloads</button></form><?php endif; ?>
 							<form method="post"><input type="hidden" name="csrf_token" value="<?= $h(csrf_token()) ?>"><input type="hidden" name="id" value="<?= (int) $device['id'] ?>"><input type="hidden" name="action" value="toggle"><button class="<?= (int) $device['is_active'] ? 'text-red-200' : 'text-emerald-200' ?>"><?= (int) $device['is_active'] ? 'Disable' : 'Enable' ?></button></form>
 							<form method="post" onsubmit="return confirm('Create a new token? The old token stops working immediately.')"><input type="hidden" name="csrf_token" value="<?= $h(csrf_token()) ?>"><input type="hidden" name="id" value="<?= (int) $device['id'] ?>"><input type="hidden" name="action" value="rotate"><button class="text-violet-300 hover:text-white">New token</button></form>
+							<form method="post" onsubmit="return confirm(<?= $h(json_encode('Delete ' . $device['name'] . '? This also deletes its ' . (int) $device['detection_count'] . ' detection(s) and scan history. This cannot be undone.')) ?>)"><input type="hidden" name="csrf_token" value="<?= $h(csrf_token()) ?>"><input type="hidden" name="id" value="<?= (int) $device['id'] ?>"><input type="hidden" name="action" value="delete"><button class="text-red-300 hover:text-red-100">Delete</button></form>
 						</div></td>
 					</tr>
 				<?php endforeach; ?>
