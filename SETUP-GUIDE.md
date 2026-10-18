@@ -510,6 +510,21 @@ SHOW COLUMNS FROM maldetect_db.devices LIKE 'agent_stopped_at';
 
 **Step 4: Test.** With the **Devices** page open on Laptop 1, press **Ctrl+C** in Laptop 2's agent window. Within about 5 seconds (the page updates live), **laptop2** changes to **○ Offline**. Start the agent again and it changes back to **● Online**.
 
+### Change 13: Reports (CSV and PDF)
+
+**What changed:** a new **Reports** page in the Admin sidebar.
+
+- Filters: **From / To** date (default: the last 7 days), **Device**, **Result** (including *Threats only*) and **Source** (new downloads or manual scans).
+- Summary numbers (total, malicious, suspicious, no threat, unknown/pending, devices), **Detections by Device**, and the **Top Threats**.
+- **Download CSV**: every matching detection, one row per file, opens in Excel.
+- **Print / Save as PDF**: prints the report without the sidebar and buttons. In the print window choose **Save as PDF** as the printer to get a PDF file.
+
+**SQL to run:** none.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Test.** Open **Reports**, choose a date range that includes your test downloads, click **Apply Filters**, then **Download CSV** (open it in Excel) and **Print / Save as PDF**.
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)
