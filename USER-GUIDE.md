@@ -61,17 +61,19 @@ Choose **one** way.
 
 ### Way A: the installer (recommended for lab PCs, no Python needed)
 
-Prepare once on the server (needs Python there):
+Prepare once on the server (it needs Python there). This **creates** the folder `agent\dist`; it does not exist before, and `git pull` does not bring it:
 
-```text
+```powershell
 cd C:\xampp1\htdocs\threat2026\agent
-build_exe.bat
+.\build_exe.bat
 ```
 
-Copy the folder `agent\dist` to a USB drive. Then on **each** monitored PC:
+After 1–2 minutes it prints **Done** and the folder `C:\xampp1\htdocs\threat2026\agent\dist`, which contains `MalDetectAgent.exe`, `install_agent.ps1`, `uninstall_agent.ps1` and `config.example.json` (plus `maldetect-ca.crt` if HTTPS is set up). Build it again after every agent update.
+
+Copy the **whole `dist` folder** to a USB drive. Then on **each** monitored PC:
 
 1. Plug in the USB drive and open **PowerShell as Administrator** (right-click PowerShell > **Run as administrator**).
-2. Go to the copied folder and run the installer with **this PC's token** from Part 1:
+2. Go to the copied folder and run the installer with **this PC's token** from Part 1. `E:` is the USB drive's letter in this example; check yours in **File Explorer > This PC** (or copy `dist` to the Desktop and use that path):
 
    ```powershell
    cd E:\dist
