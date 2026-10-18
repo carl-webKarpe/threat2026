@@ -617,6 +617,16 @@ It creates a private **MalDetect Local CA** and a certificate for the IP, points
 
 **Browsers on other PCs** show a security warning for this certificate, because only Laptop 1 trusts the MalDetect CA. That is fine for the lab: the agents do not use a browser. To remove the warning on another PC, double-click `maldetect-ca.crt` there > **Install Certificate** > **Local Machine** > **Trusted Root Certification Authorities**.
 
+### Change 16: Rename a device
+
+**What changed:** each device on the **Devices** page has a **Rename** action. It asks for the new name and changes only the label: the **token stays the same**, so the agent on that PC keeps working with no changes. Detections, scan history and reports show the new name right away. Two devices cannot have the same name.
+
+**SQL to run:** none.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Test.** On **Devices**, click **Rename** on `mainDevice`, type for example `Laptop 1 (Server)` and click **OK**. A green message confirms it, and the device stays **● Online**.
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)
