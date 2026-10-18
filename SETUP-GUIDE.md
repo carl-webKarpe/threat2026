@@ -715,6 +715,7 @@ Your laptop can be **both** the server and the monitored PC. This tests the whol
 | Workbench: `Error Code: 1824. Failed to open the referenced table 'users'` | The database is not installed yet. Run `database/maldetect_full_install.sql` first. |
 | Login page says "Unable to complete login" | PHP cannot connect to MySQL. Check that MySQL is running and that the user and password match `config/database.php` (default: `root`, empty password). |
 | Devices page says "Run database/migrations/phase9_devices.sql first" | Do Change 1, Step 3. |
+| Agent: `CERTIFICATE_VERIFY_FAILED` | The agent does not have the MalDetect CA, or `server_url` uses an IP the certificate was not made for. Copy `agent\maldetect-ca.crt` into the agent folder and set `"ca_file": "maldetect-ca.crt"` in `config.json`. If the server's IP changed, run `tools\setup_https.ps1` again with the new IP and restart Apache. |
 | Agent: `HTTP 401: Invalid or disabled device token` | The token is wrong or the device is disabled. Click **New token** on the Devices page and paste the new one into `config.json`. |
 | Agent: `Connection refused` or `timed out` | The PC cannot reach the server. Check the server IP and the firewall rule. |
 | Results stay "Pending" | The VirusTotal key is missing or the 4 requests/minute limit was reached. Wait a minute; the agent asks again by itself. |
