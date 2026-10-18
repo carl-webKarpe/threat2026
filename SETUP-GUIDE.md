@@ -3,7 +3,7 @@
 Follow this guide every time new changes are pushed.
 
 - **Part 1** gets the newest code (`git pull`).
-- **Part 2** updates the database with phpMyAdmin (XAMPP) or MySQL Workbench.
+- **Part 2** updates the database with MySQL Workbench.
 - **Part 3** is the change log. Each change lists the SQL to run and the steps to set it up. Do only the changes you have not done yet, from oldest to newest.
 
 ---
@@ -52,21 +52,21 @@ Follow this guide every time new changes are pushed.
 
 ## Part 2: How to run SQL (do this when a change says "Run this SQL")
 
-### With XAMPP / phpMyAdmin (recommended)
+Setup used here: **MySQL Server (MySQL80) + MySQL Workbench** for the database, and **XAMPP for Apache only**. Do not start MySQL in XAMPP (see Change 7).
 
-1. Open the **XAMPP Control Panel** and click **Start** next to **Apache** and **MySQL**. Both should turn green.
-2. Open **http://localhost/phpmyadmin** in your browser.
-3. **To paste SQL:** click the **SQL** tab at the top, paste the SQL from the change log into the big box, and click **Go** (bottom right).
-4. **To run a whole `.sql` file:** click the **Import** tab, click **Choose File**, pick the `.sql` file named in the change, and click **Import** (or **Go**) at the bottom.
-5. A green message such as *"Import has been successfully finished"* or *"MySQL returned an empty result set"* means it worked. A red box starting with `#` and a number (for example `#1050`) is an error; see "Problems and fixes" at the end.
-6. Click **maldetect_db** in the left panel to see its tables.
+### With MySQL Workbench (recommended)
 
-### With MySQL Workbench (alternative)
+1. Make sure the **MySQL80** service is running (Change 7, Step 1).
+2. Open **MySQL Workbench** and double-click your connection (for example **Local instance MySQL80**). Enter your MySQL root password if it asks.
+3. **To paste SQL:** click the **SQL+** icon at the top left (or **File > New Query Tab**), paste the SQL from the change log, and run **everything** with **Ctrl+Shift+Enter**, or click the plain lightning icon ⚡ (not the one with the cursor). Do not use Ctrl+Enter, which runs only the line where your cursor is.
+4. **To run a whole `.sql` file:** **File > Open SQL Script** (Ctrl+Shift+O), pick the `.sql` file named in the change, then **Ctrl+Shift+Enter**.
+5. Every row in the **Output** panel at the bottom should have a green ✔. A red ✖ is an error; read the **Message** column and see "Problems and fixes" at the end.
+6. In **SCHEMAS** on the left, click the refresh arrows to see new tables.
 
-1. Open **MySQL Workbench** and double-click your connection.
-2. Click the **SQL+** icon at the top left (or **File > New Query Tab**), paste the SQL, and run **everything** with **Ctrl+Shift+Enter**. Do not use Ctrl+Enter, which runs only one line.
-3. To run a file instead: **File > Open SQL Script**, pick the `.sql` file, then **Ctrl+Shift+Enter**.
-4. Every row in the **Output** panel should have a green ✔.
+### With phpMyAdmin (only if you use XAMPP's own MySQL instead)
+
+1. Start **Apache** and **MySQL** in the XAMPP Control Panel and open **http://localhost/phpmyadmin**.
+2. **To paste SQL:** the **SQL** tab, paste, then **Go**. **To run a file:** the **Import** tab, **Choose File**, then **Import**.
 
 ### Check what your database already has
 
@@ -88,7 +88,7 @@ WHERE TABLE_SCHEMA = 'maldetect_db' AND TABLE_NAME = 'users';
 
 ### First-time install (empty computer, no database yet)
 
-Skip the change log. Run the file `database/maldetect_full_install.sql` (phpMyAdmin: **Import** tab > **Choose File** > **Import**). It creates the whole database with every change included. Then continue with Part 4.
+Skip the change log. Run the file `database/maldetect_full_install.sql` (Workbench: **File > Open SQL Script**, then **Ctrl+Shift+Enter**). It creates the whole database with every change included. Then continue with Part 4.
 
 ---
 
@@ -223,6 +223,8 @@ SHOW TABLES LIKE 'device%';
 
 ### Change 4: Switch from MySQL Workbench to XAMPP's MySQL
 
+> **Replaced by Change 7.** Skip this change; your instructor's setup uses MySQL Workbench.
+
 **What changed:** no code changes. The guide now uses XAMPP's MySQL and phpMyAdmin. The database in your separate MySQL (the one Workbench used) is not copied, so you install a fresh one in XAMPP.
 
 **Step 1: Stop the other MySQL.** XAMPP's MySQL cannot start while the other MySQL uses port 3306.
@@ -271,7 +273,7 @@ SELECT username, email, role FROM users;
 
 **What changed:** removed `auth/admin/`, `lib/`, `config/file_activity_monitor.php` and `database/migrations/phase9_file_monitoring.sql`. They crashed when opened and duplicated what the agent already does. The **Print Scan Details** button from those files is now on the real Scan Details page (`admin/view_scan.php`). Git still keeps the removed files in its history if you ever need them.
 
-**SQL to run:** none. If you already imported `phase9_file_monitoring.sql`, you can remove its unused tables in phpMyAdmin (**SQL** tab):
+**SQL to run:** none. If you already imported `phase9_file_monitoring.sql`, you can remove its unused tables (run this in Workbench):
 
 ```sql
 USE maldetect_db;
@@ -282,13 +284,53 @@ DROP TABLE IF EXISTS file_monitor_events, file_monitor_state, file_monitor_statu
 
 **Step 2: Test.** Sign in as `admin`, open **Scan History**, click **View Result** on any scan, and click **Print Scan Details**. The print preview shows only the scan details, without the sidebar.
 
+### Change 7: Use MySQL Workbench again (instructor's setup)
+
+**What changed:** no code changes. The database runs on **MySQL Server (MySQL80)** and is managed in **MySQL Workbench**. XAMPP is used only for **Apache** (the website).
+
+**Step 1: Start MySQL80 and keep it starting automatically.**
+
+1. In the XAMPP Control Panel, click **Stop** next to **MySQL** if it is running. Only **Apache** should be green.
+2. Press **Windows key + R**, type `services.msc` and press Enter.
+3. Find **MySQL80**. Right-click it > **Start**.
+4. Double-click it, set **Startup type** to **Automatic**, then click **OK**.
+
+**Step 2: Give PHP your MySQL password.** MySQL80 usually has a root password.
+
+1. In `C:\xampp1\htdocs\threat2026\config\`, copy `database.local.example.php` and name the copy `database.local.php` (skip if it already exists).
+2. Open it in Notepad, set `'password' => 'your MySQL root password'`, and save.
+
+**Step 3: Check the database in Workbench.** You created `maldetect_db` in Workbench before, so it should still be there. Run this:
+
+```sql
+SHOW DATABASES LIKE 'maldetect_db';
+```
+
+- If it shows `maldetect_db`, run the next SQL to confirm it has 8 tables, then go to Step 4.
+- If nothing comes back, run `database\maldetect_full_install.sql` (**File > Open SQL Script**, then **Ctrl+Shift+Enter**).
+
+```sql
+USE maldetect_db;
+SHOW TABLES;
+```
+
+**Step 4: Set the Superadmin email** (use your own email), if you have not done it in this database yet:
+
+```sql
+USE maldetect_db;
+UPDATE users SET email = 'your-email@gmail.com' WHERE username = 'superadmin';
+SELECT username, email, role FROM users;
+```
+
+**Step 5: Test.** Start **Apache** in XAMPP, open `http://localhost/threat2026/login.php` and sign in as `admin` / `ChangeMe123!`.
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)
 
 Your laptop can be **both** the server and the monitored PC. This tests the whole system except the network cable.
 
-1. Start **Apache** and **MySQL** in XAMPP.
+1. Start **Apache** in XAMPP (not MySQL), and make sure the **MySQL80** service is running.
 2. Add your VirusTotal key in `config\scanner.local.php` (see Part 4, "On the server PC", step 3).
 3. Sign in as `admin`, open **Devices**, register a device named `My Laptop`, and copy the token.
 4. Make the agent's config:
@@ -370,7 +412,8 @@ Your laptop can be **both** the server and the monitored PC. This tests the whol
 
 | Problem | Fix |
 | --- | --- |
-| XAMPP: MySQL does not turn green, or the log says *"Port 3306 in use"* | Another MySQL is running. Do Change 4, Step 1. |
+| XAMPP: MySQL does not turn green, or the log says *"Port 3306 in use"* | That is expected: MySQL80 already uses port 3306. Leave XAMPP's MySQL stopped and use MySQL80 (Change 7). |
+| "Unable to complete login" after switching to Workbench | PHP cannot log in to MySQL80. Put the right root password in `config\database.local.php` (Change 7, Step 2), and check MySQL80 is running in `services.msc`. |
 | phpMyAdmin: `#1050 - Table ... already exists` | You already ran this change. Nothing to do. |
 | phpMyAdmin: `#1046 - No database selected` | Add `USE maldetect_db;` as the first line, or click **maldetect_db** on the left before the **SQL** tab. |
 | Workbench: `Error Code: 1046. No database selected` | The SQL must start with `USE maldetect_db;`. Run the whole script with Ctrl+Shift+Enter. |

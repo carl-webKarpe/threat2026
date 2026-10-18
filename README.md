@@ -15,16 +15,17 @@ MalDetect checks files for malware with the VirusTotal API in two ways:
 - A VirusTotal API key
 - Python 3.9+ on each PC that runs the agent
 
-## Database setup (XAMPP / phpMyAdmin)
+## Database setup (MySQL Workbench)
+
+The database runs on MySQL Server (MySQL80) and is managed with MySQL Workbench. XAMPP is only used for Apache.
 
 **New install:**
 
-1. Start **Apache** and **MySQL** in the XAMPP Control Panel.
-2. Open **http://localhost/phpmyadmin** and click the **Import** tab.
-3. Click **Choose File**, pick `database/maldetect_full_install.sql`, and click **Import**.
-4. Click `maldetect_db` on the left. It should list `users`, `scans`, `audit_logs`, `login_attempts`, `superadmin_otps`, `superadmin_otp_requests`, `devices` and `device_detections`.
-
-MySQL Workbench works too: **File > Open SQL Script**, then **Ctrl+Shift+Enter**.
+1. Make sure the **MySQL80** service is running, and open your connection in **MySQL Workbench**.
+2. Choose **File > Open SQL Script** and pick `database/maldetect_full_install.sql`.
+3. Run it with **Query > Execute All** (Ctrl+Shift+Enter).
+4. Refresh **SCHEMAS**. `maldetect_db` should list `users`, `scans`, `audit_logs`, `login_attempts`, `superadmin_otps`, `superadmin_otp_requests`, `devices` and `device_detections`.
+5. If your MySQL root user has a password, copy `config/database.local.example.php` to `config/database.local.php` and put the password in it.
 
 You can run the script again safely. It keeps existing tables and accounts.
 
