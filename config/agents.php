@@ -6,8 +6,12 @@ require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/scanner.php';
 require_once __DIR__ . '/virustotal.php';
 
-/** A device counts as online when it sent any request within this many seconds. */
-const AGENT_ONLINE_WINDOW = 300;
+/**
+ * A device counts as online when it sent any request within this many seconds (the agent checks in every
+ * 60 s) and its agent did not say it was stopping. The window only matters when an agent ends without
+ * saying goodbye: a crash, sleep, or a lost network.
+ */
+const AGENT_ONLINE_WINDOW = 180;
 
 /** Maximum file reports a single device may send per hour ("Scan now" can report a whole Downloads folder). */
 const AGENT_MAX_REPORTS_PER_HOUR = 500;
@@ -74,6 +78,13 @@ function virustotal_reserve_request(PDO $pdo): bool
     }
 }
 
+/** SQL condition that is true for online devices. $table is the devices table name or alias. */
+function agent_online_sql(string $table = 'devices'): string
+{
+    return "({$table}.last_seen_at >= DATE_SUB(NOW(), INTERVAL " . AGENT_ONLINE_WINDOW . " SECOND)"
+        . " AND {$table}.agent_stopped_at IS NULL)";
+}
+
 /** @return array{token: string, hash: string, prefix: string} */
 function agent_generate_token(): array
 {
@@ -129,11 +140,19 @@ function agent_authenticate(PDO $pdo): array
         agent_json_response(['success' => false, 'message' => 'Invalid or disabled device token.'], 401);
     }
 
-    $seen = $pdo->prepare('UPDATE devices SET last_seen_at = CURRENT_TIMESTAMP, last_ip = :ip WHERE id = :id');
-    $seen->execute([
+    // Any request proves the agent is running, so it also clears a previous "stopping" notice.
+    $seenParameters = [
         'ip' => filter_var($_SERVER['REMOTE_ADDR'] ?? '', FILTER_VALIDATE_IP) ?: null,
         'id' => $device['id'],
-    ]);
+    ];
+    try {
+        $seen = $pdo->prepare('UPDATE devices SET last_seen_at = CURRENT_TIMESTAMP, last_ip = :ip, agent_stopped_at = NULL WHERE id = :id');
+        $seen->execute($seenParameters);
+    } catch (PDOException $exception) {
+        // Database without the Phase 12 column.
+        $seen = $pdo->prepare('UPDATE devices SET last_seen_at = CURRENT_TIMESTAMP, last_ip = :ip WHERE id = :id');
+        $seen->execute($seenParameters);
+    }
 
     return $device;
 }

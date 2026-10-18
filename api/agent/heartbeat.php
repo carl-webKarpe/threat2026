@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-// POST, JSON body: {"hostname": "...", "os": "...", "agent_version": "..."}
+// POST, JSON body: {"hostname": "...", "os": "...", "agent_version": "...", "stopping": false}
+// "stopping": true is sent once when the agent shuts down, so the device shows Offline right away.
 // Header: X-Device-Token: <device token from Admin > Devices>
 
 require_once __DIR__ . '/../../config/agents.php';
@@ -23,6 +24,10 @@ try {
         'agent_version' => agent_clean_text($body['agent_version'] ?? null, 50),
         'id' => $device['id'],
     ]);
+    if (($body['stopping'] ?? false) === true) {
+        $stopped = $pdo->prepare('UPDATE devices SET agent_stopped_at = CURRENT_TIMESTAMP WHERE id = :id');
+        $stopped->execute(['id' => $device['id']]);
+    }
 } catch (Throwable $exception) {
     error_log('Agent heartbeat failed: ' . $exception->getMessage());
     agent_json_response(['success' => false, 'message' => 'The server is temporarily unavailable.'], 500);

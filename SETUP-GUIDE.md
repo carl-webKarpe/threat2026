@@ -476,6 +476,40 @@ Use **Disable** instead if you only want to stop a device for now and keep its h
 
 **If you see the 401 message:** open the **Devices** page on the server. If the device shows **Disabled**, click **Enable**. Otherwise click **New token** (or register the device again if you deleted it), put the new token in that PC's `config.json`, and restart the agent.
 
+### Change 12: Devices go Offline as soon as the agent stops
+
+**What changed:**
+
+- When you stop the agent with **Ctrl+C** or **close its window**, the agent (version 1.2.0) tells the server it is stopping, and the device shows **○ Offline right away** (before, it stayed Online for up to 5 minutes). The agent prints `Agent stopped. The device now shows Offline.`
+- If an agent ends without saying goodbye (crash, sleep, unplugged cable), the device now turns Offline after **3 minutes** instead of 5.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Run this SQL in Workbench** (same as `database/migrations/phase12_agent_stop.sql`), with **Ctrl+Shift+Enter**:
+
+```sql
+USE maldetect_db;
+
+-- Phase 12: show a device as Offline as soon as its agent is stopped.
+-- Safe to run more than once.
+
+-- When the agent said it was stopping (Ctrl+C or closing its window). Cleared by its next request.
+SET @sql := IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'devices' AND COLUMN_NAME = 'agent_stopped_at') = 0,
+    'ALTER TABLE devices ADD COLUMN agent_stopped_at TIMESTAMP NULL AFTER last_ip', 'DO 0');
+PREPARE phase12_stmt FROM @sql; EXECUTE phase12_stmt; DEALLOCATE PREPARE phase12_stmt;
+```
+
+Check it worked; this should return one row:
+
+```sql
+SHOW COLUMNS FROM maldetect_db.devices LIKE 'agent_stopped_at';
+```
+
+**Step 3: Update the agent on every laptop/PC.** Stop it (**Ctrl+C**), copy the new `agent\maldetect_agent.py` over the old one (on Laptop 2: into `C:\MalDetectAgent`), and start it again. The first line says `MalDetect agent 1.2.0`.
+
+**Step 4: Test.** With the **Devices** page open on Laptop 1, press **Ctrl+C** in Laptop 2's agent window. Within about 5 seconds (the page updates live), **laptop2** changes to **○ Offline**. Start the agent again and it changes back to **● Online**.
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)

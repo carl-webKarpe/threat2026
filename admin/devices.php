@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     : 'A scan for ' . $device['name'] . ' is already waiting or running.';
             } elseif ($action === 'scan_all') {
                 $online = $pdo->query(
-                    'SELECT id FROM devices WHERE is_active = 1 AND last_seen_at >= DATE_SUB(NOW(), INTERVAL ' . AGENT_ONLINE_WINDOW . ' SECOND)'
+                    'SELECT id FROM devices WHERE is_active = 1 AND ' . agent_online_sql()
                 )->fetchAll(PDO::FETCH_COLUMN);
                 $queued = 0;
                 foreach ($online as $onlineId) {
@@ -94,14 +94,14 @@ try {
     $devices = $pdo->query(
         "SELECT devices.id, devices.name, devices.hostname, devices.os_info, devices.agent_version, devices.token_prefix,
                 devices.is_active, devices.last_seen_at, devices.last_ip, devices.created_at,
-                devices.last_seen_at >= DATE_SUB(NOW(), INTERVAL " . AGENT_ONLINE_WINDOW . " SECOND) AS is_online,
+                " . agent_online_sql() . " AS is_online,
                 (SELECT COUNT(*) FROM device_detections WHERE device_id = devices.id) AS detection_count,
                 (SELECT COUNT(*) FROM device_detections WHERE device_id = devices.id AND scan_result IN ('MALICIOUS', 'SUSPICIOUS')) AS threat_count
          FROM devices ORDER BY devices.created_at DESC"
     )->fetchAll();
 } catch (Throwable $exception) {
     error_log($exception->getMessage());
-    $error = $error ?: 'Devices are unavailable. Run database/migrations/phase9_devices.sql first.';
+    $error = $error ?: 'Devices are unavailable. Run the latest database migrations (see SETUP-GUIDE.md).';
 }
 
 // Latest command per device, for the "Last Scan" column. Needs the Phase 10 tables.

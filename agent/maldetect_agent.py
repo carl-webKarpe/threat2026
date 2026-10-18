@@ -29,7 +29,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-AGENT_VERSION = "1.1.1"
+AGENT_VERSION = "1.2.0"
 
 # Browsers write partial downloads under these extensions and rename the file when it is complete.
 PARTIAL_DOWNLOAD_SUFFIXES = {".crdownload", ".part", ".partial", ".tmp", ".download", ".opdownload", ".!ut"}
@@ -65,11 +65,11 @@ class MalDetectClient:
         # Set when the server answers 401: the token was deleted, disabled or replaced.
         self.token_rejected = False
 
-    def _send(self, request: urllib.request.Request) -> dict:
+    def _send(self, request: urllib.request.Request, timeout: float = 120) -> dict:
         request.add_header("X-Device-Token", self.token)
         request.add_header("Accept", "application/json")
         try:
-            with urllib.request.urlopen(request, timeout=120, context=self.context) as response:
+            with urllib.request.urlopen(request, timeout=timeout, context=self.context) as response:
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as error:
             try:
@@ -80,10 +80,10 @@ class MalDetectClient:
                 self.token_rejected = True
             raise ApiError(error.code, payload.get("message", error.reason)) from error
 
-    def post_json(self, endpoint: str, body: dict) -> dict:
+    def post_json(self, endpoint: str, body: dict, timeout: float = 120) -> dict:
         request = urllib.request.Request(self.base + endpoint, data=json.dumps(body).encode("utf-8"), method="POST")
         request.add_header("Content-Type", "application/json")
-        return self._send(request)
+        return self._send(request, timeout)
 
     def get(self, endpoint: str) -> dict:
         return self._send(urllib.request.Request(self.base + endpoint, method="GET"))
@@ -156,6 +156,17 @@ class Agent:
     @staticmethod
     def _fingerprint(stat: os.stat_result) -> str:
         return f"{stat.st_size}:{int(stat.st_mtime)}"
+
+    def say_goodbye(self) -> None:
+        """Tells the server this agent is stopping, so the device shows Offline right away."""
+        if getattr(self, "_said_goodbye", False):
+            return
+        self._said_goodbye = True
+        try:
+            self.client.post_json("heartbeat.php", {"stopping": True, "agent_version": AGENT_VERSION}, timeout=3)
+            log.info("Agent stopped. The device now shows Offline.")
+        except (ApiError, OSError, ValueError) as error:
+            log.info("Agent stopped (could not tell the server: %s).", error)
 
     def heartbeat(self) -> None:
         if time.time() < self.next_heartbeat:
@@ -378,6 +389,26 @@ def load_config(path: Path) -> dict:
     return config
 
 
+def watch_console_close(agent: "Agent") -> None:
+    """On Windows, say goodbye when the console window is closed, the user logs off or the PC shuts down."""
+    if os.name != "nt":
+        return
+    import ctypes
+    from ctypes import wintypes
+
+    handler_type = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.DWORD)
+
+    def on_console_event(event: int) -> bool:
+        # 2 = window closed, 5 = log off, 6 = shut down. Ctrl+C (0) is handled as KeyboardInterrupt.
+        if event in (2, 5, 6):
+            agent.say_goodbye()
+        return False
+
+    # Keep a reference so the callback is not garbage-collected while Windows still uses it.
+    agent._console_handler = handler_type(on_console_event)
+    ctypes.windll.kernel32.SetConsoleCtrlHandler(agent._console_handler, True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="MalDetect download-monitoring agent")
     parser.add_argument("--config", default=str(Path(__file__).with_name("config.json")))
@@ -388,10 +419,14 @@ def main() -> None:
     config_path = Path(args.config).resolve()
     try:
         agent = Agent(load_config(config_path), config_path.parent)
-        agent.config_path = config_path
+    except KeyboardInterrupt:
+        return
+    agent.config_path = config_path
+    watch_console_close(agent)
+    try:
         agent.run(once=args.once)
     except KeyboardInterrupt:
-        log.info("Agent stopped.")
+        agent.say_goodbye()
 
 
 if __name__ == "__main__":

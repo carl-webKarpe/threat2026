@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../auth/role_check.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/scanner.php';
+require_once __DIR__ . '/../config/agents.php';
 require_role('admin');
 
 $statistics = ['total' => 0, 'completed' => 0, 'scanning' => 0, 'failed' => 0, 'malicious' => 0, 'suspicious' => 0, 'no_threat' => 0];
@@ -47,7 +48,7 @@ $recentThreats = [];
 try {
     $deviceStatistics = $pdo->query(
         "SELECT (SELECT COUNT(*) FROM devices WHERE is_active = 1) AS devices,
-                (SELECT COUNT(*) FROM devices WHERE is_active = 1 AND last_seen_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)) AS online,
+                (SELECT COUNT(*) FROM devices WHERE is_active = 1 AND " . agent_online_sql() . ") AS online,
                 (SELECT COUNT(*) FROM device_detections WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)) AS downloads,
                 (SELECT COUNT(*) FROM device_detections WHERE scan_result IN ('MALICIOUS', 'SUSPICIOUS') AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)) AS threats"
     )->fetch() ?: null;
