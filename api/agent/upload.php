@@ -40,6 +40,10 @@ if (!hash_equals((string) $detection['sha256_hash'], (string) hash_file('sha256'
     agent_json_response(['success' => false, 'message' => 'The uploaded file does not match the reported SHA-256.'], 422);
 }
 
+if (!virustotal_reserve_request($pdo)) {
+    agent_json_response(['success' => false, 'message' => 'VirusTotal request limit reached. Try again later.', 'retryable' => true], 429);
+}
+
 $uploadDirectory = scanner_upload_directory();
 $storedPath = $uploadDirectory . DIRECTORY_SEPARATOR . bin2hex(random_bytes(32)) . '.bin';
 try {

@@ -29,7 +29,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-AGENT_VERSION = "1.0.0"
+AGENT_VERSION = "1.1.0"
 
 # Browsers write partial downloads under these extensions and rename the file when it is complete.
 PARTIAL_DOWNLOAD_SUFFIXES = {".crdownload", ".part", ".partial", ".tmp", ".download", ".opdownload", ".!ut"}
@@ -41,6 +41,7 @@ DEFAULT_CONFIG = {
     "poll_seconds": 5,
     "heartbeat_seconds": 60,
     "result_poll_seconds": 30,
+    "command_poll_seconds": 5,
     "upload_unknown_files": True,
     "report_existing_files": False,
     "verify_tls": True,
@@ -131,6 +132,7 @@ class Agent:
         self.last_seen: dict[str, tuple[int, float]] = {}
         self.max_upload_bytes = 20 * 1024 * 1024
         self.next_heartbeat = 0.0
+        self.next_command_poll = 0.0
 
     def _load_state(self) -> dict:
         try:
@@ -206,12 +208,13 @@ class Agent:
         for key in [k for k in self.state["reported"] if k not in current]:
             del self.state["reported"][key]
 
-    def report(self, path: Path, stat: os.stat_result) -> None:
+    def report(self, path: Path, stat: os.stat_result, trigger: str = "download", command_id: int | None = None) -> bool:
+        """Reports one file to the server. Returns True when the server accepted it."""
         try:
             sha256 = sha256_of(path)
         except OSError as error:
             log.debug("Cannot read %s yet: %s", path, error)
-            return
+            return False
         source_url, referrer_url = read_zone_identifier(path)
         body = {
             "file_name": path.name,
@@ -221,16 +224,57 @@ class Agent:
             "source_url": source_url,
             "referrer_url": referrer_url,
             "downloaded_at": datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat(),
+            "trigger": trigger,
+            "command_id": command_id,
         }
         try:
             detection = self.client.post_json("report.php", body)["detection"]
         except (ApiError, OSError, KeyError, ValueError) as error:
             log.error("Report for %s failed, will retry: %s", path.name, error)
-            return
+            return False
         log.info("Reported %s (%s): %s", path.name, sha256[:12], detection.get("risk_level") or detection.get("status"))
         self.state["reported"][str(path)] = self._fingerprint(stat)
         self.handle_detection(detection, path)
         self._save_state()
+        return True
+
+    def poll_commands(self) -> None:
+        """Fetches commands queued by an administrator (for example "Scan now") and runs them."""
+        if time.time() < self.next_command_poll:
+            return
+        self.next_command_poll = time.time() + self.config["command_poll_seconds"]
+        try:
+            commands = self.client.get("commands.php").get("commands", [])
+        except (ApiError, OSError, ValueError) as error:
+            log.debug("Command check failed: %s", error)
+            return
+        for command in commands:
+            self.run_command(command)
+
+    def run_command(self, command: dict) -> None:
+        command_id = int(command["id"])
+        if command.get("type") != "scan_downloads":
+            self.finish_command(command_id, "failed", 0, f"Unknown command: {command.get('type')}")
+            return
+        log.info("Scan requested by the administrator: scanning %s", ", ".join(map(str, self.watch_dirs)))
+        reported = failed = 0
+        for path, stat in list(self.candidate_files()):
+            if self.report(path, stat, trigger="manual_scan", command_id=command_id):
+                reported += 1
+            else:
+                failed += 1
+        message = f"Reported {reported} file(s)" + (f", {failed} could not be read or sent" if failed else "") + "."
+        log.info("Scan finished: %s", message)
+        self.finish_command(command_id, "failed" if failed and not reported else "completed", reported, message)
+
+    def finish_command(self, command_id: int, status: str, files_reported: int, message: str) -> None:
+        try:
+            self.client.post_json(
+                "command_result.php",
+                {"id": command_id, "status": status, "files_reported": files_reported, "message": message},
+            )
+        except (ApiError, OSError, ValueError) as error:
+            log.error("Could not report the result of command #%s: %s", command_id, error)
 
     def handle_detection(self, detection: dict, path: Path | None) -> None:
         detection_id = str(detection["id"])
@@ -242,6 +286,7 @@ class Agent:
             )
             self.state["pending"].pop(detection_id, None)
             return
+        retry_upload = False
         if detection.get("needs_upload") and path is not None and self.config["upload_unknown_files"]:
             try:
                 if path.stat().st_size <= self.max_upload_bytes:
@@ -249,9 +294,14 @@ class Agent:
                     log.info("Uploaded %s for analysis.", path.name)
                 else:
                     log.info("%s is unknown to VirusTotal and too large to upload.", path.name)
-            except (ApiError, OSError, KeyError) as error:
+            except ApiError as error:
+                # 429: the VirusTotal limit is used up; keep the file and try again on the next result check.
+                retry_upload = error.status == 429
+                log.log(logging.INFO if retry_upload else logging.ERROR, "Upload of %s %s: %s",
+                        path.name, "postponed" if retry_upload else "failed", error)
+            except (OSError, KeyError) as error:
                 log.error("Upload of %s failed: %s", path.name, error)
-        if not detection.get("is_final"):
+        if retry_upload or not detection.get("is_final"):
             self.state["pending"][detection_id] = str(path) if path else ""
         else:
             self.state["pending"].pop(detection_id, None)
@@ -280,6 +330,7 @@ class Agent:
         next_result_poll = 0.0
         while True:
             self.heartbeat()
+            self.poll_commands()
             self.scan_folders()
             if time.time() >= next_result_poll and self.state["pending"]:
                 self.poll_pending()

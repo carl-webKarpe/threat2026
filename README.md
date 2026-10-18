@@ -122,9 +122,11 @@ Every request sends the header `X-Device-Token: <token>`. Responses are JSON.
 | Endpoint | Method | Body | Purpose |
 | --- | --- | --- | --- |
 | `api/agent/heartbeat.php` | POST | `{"hostname", "os", "agent_version"}` | Marks the device online |
-| `api/agent/report.php` | POST | `{"file_name", "sha256", "file_size", "file_path", "source_url", "referrer_url", "downloaded_at"}` | Reports a download; `file_name` and `sha256` are required |
+| `api/agent/report.php` | POST | `{"file_name", "sha256", "file_size", "file_path", "source_url", "referrer_url", "downloaded_at"}` | Reports a download; `file_name` and `sha256` are required; `trigger` is `download` or `manual_scan` |
 | `api/agent/result.php?id=N` | GET | — | Latest verdict for a detection |
 | `api/agent/upload.php` | POST multipart | `detection_id`, `file` | Uploads a file VirusTotal does not know |
+| `api/agent/commands.php` | GET | — | Commands queued by an admin, such as `scan_downloads` ("Scan now") |
+| `api/agent/command_result.php` | POST | `{"id", "status", "files_reported", "message"}` | Reports the outcome of a command |
 
 A detection response contains `status` (`pending`, `not_found`, `analyzing`, `completed`, `failed`), `result`, `risk_level`, `threat_name`, `is_threat`, `needs_upload` and `is_final`. Ask `result.php` again until `is_final` is true.
 

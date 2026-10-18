@@ -5,6 +5,7 @@
     "poll_seconds": 5,
     "heartbeat_seconds": 60,
     "result_poll_seconds": 30,
+    "command_poll_seconds": 5,
     "upload_unknown_files": true,
     "report_existing_files": false,
     "verify_tls": true

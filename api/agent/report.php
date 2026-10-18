@@ -5,7 +5,8 @@ declare(strict_types=1);
 // POST, JSON body:
 // {"file_name": "setup.exe", "sha256": "<64 hex>", "file_size": 123, "file_path": "C:\\Users\\me\\Downloads\\setup.exe",
 //  "source_url": "https://...", "referrer_url": "https://...", "downloaded_at": "2026-10-15T08:30:00Z"}
-// Only file_name and sha256 are required. Header: X-Device-Token.
+// Only file_name and sha256 are required. Optional: "trigger": "download" (default) or "manual_scan",
+// and "command_id" for files reported by a "Scan now" command. Header: X-Device-Token.
 // Responds with the detection; when is_final is false, ask again with result.php?id=<id>.
 
 require_once __DIR__ . '/../../config/agents.php';
@@ -28,6 +29,17 @@ try {
         $downloadedAt = date('Y-m-d H:i:s', $timestamp);
     }
 
+    $trigger = ($body['trigger'] ?? 'download') === 'manual_scan' ? 'manual_scan' : 'download';
+    $commandId = null;
+    if ($trigger === 'manual_scan') {
+        $requestedCommand = filter_var($body['command_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if (is_int($requestedCommand)) {
+            $command = $pdo->prepare('SELECT id FROM device_commands WHERE id = :id AND device_id = :device_id');
+            $command->execute(['id' => $requestedCommand, 'device_id' => $device['id']]);
+            $commandId = $command->fetchColumn() !== false ? $requestedCommand : null;
+        }
+    }
+
     $recent = $pdo->prepare(
         'SELECT COUNT(*) FROM device_detections WHERE device_id = :device_id AND created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)'
     );
@@ -37,11 +49,13 @@ try {
     }
 
     $insert = $pdo->prepare(
-        'INSERT INTO device_detections (device_id, file_name, file_path, file_size, sha256_hash, source_url, referrer_url, downloaded_at)
-         VALUES (:device_id, :file_name, :file_path, :file_size, :sha256_hash, :source_url, :referrer_url, :downloaded_at)'
+        'INSERT INTO device_detections (device_id, trigger_type, command_id, file_name, file_path, file_size, sha256_hash, source_url, referrer_url, downloaded_at)
+         VALUES (:device_id, :trigger_type, :command_id, :file_name, :file_path, :file_size, :sha256_hash, :source_url, :referrer_url, :downloaded_at)'
     );
     $insert->execute([
         'device_id' => $device['id'],
+        'trigger_type' => $trigger,
+        'command_id' => $commandId,
         'file_name' => $fileName,
         'file_path' => agent_clean_text($body['file_path'] ?? null, 1024),
         'file_size' => is_int($fileSize) ? $fileSize : null,

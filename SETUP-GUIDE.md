@@ -324,6 +324,86 @@ SELECT username, email, role FROM users;
 
 **Step 5: Test.** Start **Apache** in XAMPP, open `http://localhost/threat2026/login.php` and sign in as `admin` / `ChangeMe123!`.
 
+### Change 8: "Scan now" button for devices
+
+**What changed:**
+
+- **Devices** page: a **Scan Downloads** button for each device, a **Scan All Online Devices** button, and a new **Last Scan** column (Waiting for device…, Scanning…, Done · N files, Failed, Expired).
+- The agent (version 1.1.0) checks for scan requests every 5 seconds. When asked, it reports **every** file in its Downloads folder, not only new ones.
+- **Device Detections**: files from a scan have a **Manual scan** label, and a new **Source** filter shows only new downloads or only manual scans.
+- MalDetect now keeps **all** agent VirusTotal requests under 4 per minute (the free key limit). With many unknown files, results come in gradually: about 4 files per minute. Files VirusTotal already checked in the last 24 hours show their result immediately.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Run this SQL in Workbench** (same as `database/migrations/phase10_device_scans.sql`; you can also open that file with **File > Open SQL Script**). Run it with **Ctrl+Shift+Enter**:
+
+```sql
+USE maldetect_db;
+
+-- Phase 10: "Scan now" commands for devices, and a shared VirusTotal rate limit.
+-- Safe to run more than once.
+
+-- Commands an admin sends to a device. The agent fetches them, runs them and reports back.
+CREATE TABLE IF NOT EXISTS device_commands (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    device_id INT UNSIGNED NOT NULL,
+    command_type VARCHAR(30) NOT NULL,
+    -- pending: waiting for the agent; sent: agent is running it; completed; failed; expired: agent never picked it up.
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    requested_by INT UNSIGNED NOT NULL,
+    files_reported INT UNSIGNED NULL,
+    result_message VARCHAR(255) NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    picked_up_at TIMESTAMP NULL,
+    completed_at TIMESTAMP NULL,
+    INDEX device_commands_device_status_index (device_id, status),
+    CONSTRAINT device_commands_device_foreign FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
+    CONSTRAINT device_commands_requested_by_foreign FOREIGN KEY (requested_by) REFERENCES users(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- One row per VirusTotal request from the agent features, used to stay under the API limit.
+CREATE TABLE IF NOT EXISTS virustotal_requests (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    requested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX virustotal_requests_time_index (requested_at)
+) ENGINE=InnoDB;
+
+-- Whether a detection came from a normal download or from a "Scan now" command.
+SET @sql := IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'device_detections' AND COLUMN_NAME = 'trigger_type') = 0,
+    'ALTER TABLE device_detections ADD COLUMN trigger_type VARCHAR(20) NOT NULL DEFAULT ''download'' AFTER device_id', 'DO 0');
+PREPARE phase10_stmt FROM @sql; EXECUTE phase10_stmt; DEALLOCATE PREPARE phase10_stmt;
+
+SET @sql := IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'device_detections' AND COLUMN_NAME = 'command_id') = 0,
+    'ALTER TABLE device_detections ADD COLUMN command_id BIGINT UNSIGNED NULL AFTER trigger_type', 'DO 0');
+PREPARE phase10_stmt FROM @sql; EXECUTE phase10_stmt; DEALLOCATE PREPARE phase10_stmt;
+```
+
+**Step 3: Check it worked:**
+
+```sql
+USE maldetect_db;
+SHOW TABLES LIKE 'device_commands';
+SHOW COLUMNS FROM device_detections LIKE 'trigger_type';
+```
+
+Both should return one row.
+
+**Step 4: Update the agent** on every PC that runs it (including your laptop):
+
+1. Stop the agent (**Ctrl+C** in its window).
+2. Copy the new `agent\maldetect_agent.py` over the old one. Keep that PC's `config.json`.
+3. Start it again: `python maldetect_agent.py`. The first line should say `MalDetect agent 1.1.0`.
+
+**Step 5: Test.**
+
+1. Make sure the agent is running and the device shows **● Online** on **Devices**.
+2. Click **Scan Downloads** for that device. A green message says the scan was requested, and **Last Scan** shows **Waiting for device…**.
+3. Within a few seconds the agent window prints `Scan requested by the administrator` and then `Scan finished: Reported N file(s).`
+4. Refresh **Devices**: **Last Scan** shows **Done · N file(s)**.
+5. Open **Device Detections** and set **Source** to **Manual scans**. Every file from the Downloads folder is listed with a **Manual scan** label. Results fill in over the next minutes.
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)

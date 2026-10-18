@@ -9,8 +9,17 @@ require_once __DIR__ . '/virustotal.php';
 /** A device counts as online when it sent any request within this many seconds. */
 const AGENT_ONLINE_WINDOW = 300;
 
-/** Maximum file reports a single device may send per hour. */
-const AGENT_MAX_REPORTS_PER_HOUR = 200;
+/** Maximum file reports a single device may send per hour ("Scan now" can report a whole Downloads folder). */
+const AGENT_MAX_REPORTS_PER_HOUR = 500;
+
+/** VirusTotal requests allowed per minute across all agents (public API key: 4). */
+const VIRUSTOTAL_REQUESTS_PER_MINUTE = 4;
+
+/** A "Scan now" command that no agent picks up within this many hours expires. */
+const AGENT_COMMAND_EXPIRY_HOURS = 24;
+
+/** Commands an admin can send to a device. */
+const AGENT_COMMAND_TYPES = ['scan_downloads' => 'Scan Downloads'];
 
 /** Reuse a VirusTotal verdict for the same SHA-256 for this many hours instead of asking again. */
 const AGENT_VERDICT_CACHE_HOURS = 24;
@@ -23,6 +32,41 @@ const AGENT_VERDICT_COLUMNS = [
     'scan_result', 'risk_level', 'threat_name', 'safety_percentage', 'detection_count', 'malicious_count',
     'suspicious_count', 'harmless_count', 'undetected_count', 'total_engines', 'scan_summary',
 ];
+
+/**
+ * Reserves one VirusTotal request in the shared per-minute budget. Returns false when the budget is
+ * used up; the caller then leaves the work pending and tries again later.
+ */
+function virustotal_reserve_request(PDO $pdo): bool
+{
+    try {
+        if ((int) $pdo->query("SELECT GET_LOCK('maldetect_virustotal', 5)")->fetchColumn() !== 1) {
+            return false;
+        }
+    } catch (Throwable $exception) {
+        error_log('VirusTotal rate limit lock failed: ' . $exception->getMessage());
+        return true;
+    }
+
+    try {
+        $pdo->exec('DELETE FROM virustotal_requests WHERE requested_at < DATE_SUB(NOW(), INTERVAL 1 HOUR)');
+        $recent = (int) $pdo->query(
+            'SELECT COUNT(*) FROM virustotal_requests WHERE requested_at > DATE_SUB(NOW(), INTERVAL 60 SECOND)'
+        )->fetchColumn();
+        if ($recent >= VIRUSTOTAL_REQUESTS_PER_MINUTE) {
+            return false;
+        }
+        $pdo->exec('INSERT INTO virustotal_requests () VALUES ()');
+
+        return true;
+    } catch (Throwable $exception) {
+        // Without the Phase 10 table, fall back to the per-detection throttle only.
+        error_log('VirusTotal rate limit unavailable: ' . $exception->getMessage());
+        return true;
+    } finally {
+        $pdo->query("SELECT RELEASE_LOCK('maldetect_virustotal')")->fetchColumn();
+    }
+}
 
 /** @return array{token: string, hash: string, prefix: string} */
 function agent_generate_token(): array
@@ -209,6 +253,10 @@ function agent_refresh_detection(PDO $pdo, array $detection, bool $force = false
         }
     }
 
+    if (!virustotal_reserve_request($pdo)) {
+        return;
+    }
+
     $markChecked = $pdo->prepare(
         'UPDATE device_detections SET checked_at = CURRENT_TIMESTAMP, lookup_attempts = lookup_attempts + 1 WHERE id = :id'
     );
@@ -294,4 +342,30 @@ function agent_detection_payload(array $detection): array
         // True while the agent should ask again later via api/agent/result.php.
         'is_final' => in_array($status, ['completed', 'failed', 'not_found'], true),
     ];
+}
+
+/**
+ * Queues a command for a device unless the same command is already waiting or running.
+ * Returns true when a new command was queued.
+ */
+function agent_queue_command(PDO $pdo, int $deviceId, string $commandType, int $requestedBy): bool
+{
+    if (!array_key_exists($commandType, AGENT_COMMAND_TYPES)) {
+        throw new InvalidArgumentException('Unknown device command.');
+    }
+    $existing = $pdo->prepare(
+        "SELECT COUNT(*) FROM device_commands
+         WHERE device_id = :device_id AND command_type = :command_type AND status IN ('pending', 'sent')
+           AND created_at >= DATE_SUB(NOW(), INTERVAL " . AGENT_COMMAND_EXPIRY_HOURS . " HOUR)"
+    );
+    $existing->execute(['device_id' => $deviceId, 'command_type' => $commandType]);
+    if ((int) $existing->fetchColumn() > 0) {
+        return false;
+    }
+    $insert = $pdo->prepare(
+        'INSERT INTO device_commands (device_id, command_type, requested_by) VALUES (:device_id, :command_type, :requested_by)'
+    );
+    $insert->execute(['device_id' => $deviceId, 'command_type' => $commandType, 'requested_by' => $requestedBy]);
+
+    return true;
 }

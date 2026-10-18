@@ -9,6 +9,8 @@ require_role('admin');
 $deviceFilter = filter_input(INPUT_GET, 'device', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 $resultFilter = trim((string) ($_GET['result'] ?? ''));
 $search = trim((string) ($_GET['search'] ?? ''));
+$triggerFilter = (string) ($_GET['trigger'] ?? '');
+$allowedTriggers = ['download' => 'New downloads', 'manual_scan' => 'Manual scans'];
 $allowedResults = ['MALICIOUS' => 'Malicious', 'SUSPICIOUS' => 'Suspicious', 'NO_THREAT_DETECTED' => 'No Threat Detected', 'UNKNOWN' => 'Unknown to VirusTotal', 'SCAN_FAILED' => 'Scan Failed', 'PENDING' => 'Pending'];
 
 $where = [];
@@ -22,6 +24,10 @@ if ($resultFilter === 'PENDING') {
 } elseif (array_key_exists($resultFilter, $allowedResults)) {
     $where[] = 'device_detections.scan_result = :result';
     $parameters['result'] = $resultFilter;
+}
+if (array_key_exists($triggerFilter, $allowedTriggers)) {
+    $where[] = 'device_detections.trigger_type = :trigger_type';
+    $parameters['trigger_type'] = $triggerFilter;
 }
 if ($search !== '') {
     $where[] = '(device_detections.file_name LIKE :search OR device_detections.sha256_hash = :sha256)';
@@ -62,7 +68,7 @@ try {
     $loadError = true;
 }
 
-$query = array_filter(['device' => is_int($deviceFilter) ? (string) $deviceFilter : '', 'result' => $resultFilter, 'search' => $search], static fn (string $value): bool => $value !== '');
+$query = array_filter(['device' => is_int($deviceFilter) ? (string) $deviceFilter : '', 'result' => $resultFilter, 'trigger' => $triggerFilter, 'search' => $search], static fn (string $value): bool => $value !== '');
 $pageUrl = static fn (int $number): string => 'detections.php?' . http_build_query($query + ['page' => $number]);
 $h = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 $resultClass = static fn (?string $result): string => match ($result) {
@@ -81,11 +87,12 @@ require_once __DIR__ . '/../includes/header.php';
 		<p class="mono text-xs tracking-[.2em] text-violet-300">ENDPOINT ACTIVITY</p>
 		<h1 class="mt-3 text-3xl font-bold">Device Detections</h1>
 		<p class="mt-2 text-slate-400">Files downloaded on registered devices and their VirusTotal verdicts.</p>
-		<form class="mt-8 grid gap-3 rounded-2xl border border-white/10 bg-white/[.03] p-5 sm:grid-cols-4" method="get">
+		<form class="mt-8 grid gap-3 rounded-2xl border border-white/10 bg-white/[.03] p-5 sm:grid-cols-5" method="get">
 			<label class="text-sm text-slate-400 sm:col-span-2">File name or SHA-256<input class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none focus:border-violet-300/50" type="search" name="search" value="<?= $h($search) ?>"></label>
 			<label class="text-sm text-slate-400">Device<select class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100" name="device"><option value="">All</option><?php foreach ($devices as $device): ?><option value="<?= (int) $device['id'] ?>" <?= $deviceFilter === (int) $device['id'] ? 'selected' : '' ?>><?= $h($device['name']) ?></option><?php endforeach; ?></select></label>
 			<label class="text-sm text-slate-400">Result<select class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100" name="result"><option value="">All</option><?php foreach ($allowedResults as $value => $label): ?><option value="<?= $h($value) ?>" <?= $resultFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach; ?></select></label>
-			<button class="rounded-xl bg-violet-300 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-violet-200 sm:col-span-4 sm:justify-self-end" type="submit">Apply Filters</button>
+			<label class="text-sm text-slate-400">Source<select class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100" name="trigger"><option value="">All</option><?php foreach ($allowedTriggers as $value => $label): ?><option value="<?= $h($value) ?>" <?= $triggerFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach; ?></select></label>
+			<button class="rounded-xl bg-violet-300 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-violet-200 sm:col-span-5 sm:justify-self-end" type="submit">Apply Filters</button>
 		</form>
 		<?php if ($loadError): ?>
 			<div class="mt-8 rounded-2xl border border-red-300/20 bg-red-400/10 p-5 text-sm text-red-200">Detections are unavailable. Run database/migrations/phase9_devices.sql first.</div>
@@ -97,7 +104,7 @@ require_once __DIR__ . '/../includes/header.php';
 				<tbody class="divide-y divide-white/5">
 				<?php foreach ($detections as $detection): ?>
 					<tr class="text-slate-300">
-						<td class="px-5 py-4"><p class="max-w-[220px] truncate font-semibold text-white" title="<?= $h($detection['file_path'] ?? $detection['file_name']) ?>"><?= $h($detection['file_name']) ?></p><p class="mt-1 text-xs text-slate-500"><?= $detection['file_size'] === null ? '' : $h(scanner_format_size((int) $detection['file_size'])) ?></p></td>
+						<td class="px-5 py-4"><p class="max-w-[220px] truncate font-semibold text-white" title="<?= $h($detection['file_path'] ?? $detection['file_name']) ?>"><?= $h($detection['file_name']) ?></p><p class="mt-1 text-xs text-slate-500"><?= $detection['file_size'] === null ? '' : $h(scanner_format_size((int) $detection['file_size'])) ?><?php if (($detection['trigger_type'] ?? 'download') === 'manual_scan'): ?> <span class="ml-1 rounded-full border border-violet-300/30 px-2 py-0.5 text-[10px] uppercase tracking-wider text-violet-200">Manual scan</span><?php endif; ?></p></td>
 						<td class="px-5 py-4"><?= $h($detection['device_name']) ?><p class="mt-1 text-xs text-slate-500"><?= $h($detection['hostname'] ?? '') ?></p></td>
 						<td class="max-w-[220px] truncate px-5 py-4 text-xs text-slate-400" title="<?= $h($detection['source_url'] ?? '') ?>"><?= $h($detection['source_url'] ?: 'Unknown') ?></td>
 						<td class="px-5 py-4"><p class="font-semibold <?= $resultClass($detection['scan_result']) ?>"><?= $h($detection['risk_level'] ?: ucfirst((string) $detection['scan_status'])) ?></p><p class="mt-1 max-w-[220px] truncate text-xs text-slate-500"><?= $h($detection['threat_name'] ?? '') ?></p></td>
