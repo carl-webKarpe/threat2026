@@ -574,6 +574,49 @@ powershell -ExecutionPolicy Bypass -File C:\MalDetectAgent\uninstall_agent.ps1
 
 Add `-RemoveFiles` to also delete `C:\MalDetectAgent`.
 
+### Change 15: HTTPS on the LAN
+
+**What changed:** `tools\setup_https.ps1` turns on HTTPS for MalDetect with a certificate for the server's IP address. Device tokens, reports and uploaded files then travel **encrypted**, and agents check that they really talk to your server (version 1.3.0 uses the `ca_file` setting for this). HTTP keeps working, so you can switch PCs over one by one.
+
+**SQL to run:** none.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Run the setup on Laptop 1 (the server).** Find its IP with `ipconfig` (for example `192.168.1.87`). Open **PowerShell as Administrator**:
+
+```powershell
+cd C:\xampp1\htdocs\threat2026
+powershell -ExecutionPolicy Bypass -File .\tools\setup_https.ps1 -ServerIp 192.168.1.87
+```
+
+It creates a private **MalDetect Local CA** and a certificate for the IP, points Apache to it (backup: `httpd-ssl.conf.maldetect-backup`), opens port **443** in the firewall, trusts the CA on Laptop 1, and saves the CA as `agent\maldetect-ca.crt`.
+
+**Step 3: Restart Apache.** In the XAMPP Control Panel click **Stop**, then **Start** next to **Apache**.
+
+**Step 4: Test in the browser on Laptop 1.** Open `https://192.168.1.87/threat2026/login.php`. It shows a padlock with no warning. (Close and reopen the browser if it still warns.)
+
+**Step 5: Switch the agents to HTTPS.**
+
+- **Installed with install_agent.ps1:** rebuild with `agent\build_exe.bat` (it now also copies `maldetect-ca.crt` into `dist`), copy `dist` to the PC, and run the installer with **https**:
+
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl https://192.168.1.87/threat2026 -Token mdt_THE_TOKEN
+  ```
+
+  The installer finds `maldetect-ca.crt` next to it automatically.
+- **Running with Python by hand:** copy `agent\maldetect-ca.crt` into the agent folder on that PC, and in its `config.json` set:
+
+  ```json
+  "server_url": "https://192.168.1.87/threat2026",
+  "ca_file": "maldetect-ca.crt",
+  ```
+
+  Restart the agent. It should show no `CERTIFICATE_VERIFY_FAILED` errors, and the device stays **● Online**.
+
+**When the server's IP changes:** run Step 2 again with the new IP and restart Apache. The CA stays the same, so the agents keep their `maldetect-ca.crt`; only update their `server_url` (or run the installer again).
+
+**Browsers on other PCs** show a security warning for this certificate, because only Laptop 1 trusts the MalDetect CA. That is fine for the lab: the agents do not use a browser. To remove the warning on another PC, double-click `maldetect-ca.crt` there > **Install Certificate** > **Local Machine** > **Trusted Root Certification Authorities**.
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)

@@ -16,7 +16,8 @@
 .PARAMETER Token
     The device token from Admin > Devices (starts with mdt_).
 .PARAMETER CaFile
-    Optional. The server's certificate file for HTTPS with your own certificate (maldetect-server.crt).
+    Optional. The MalDetect CA certificate for HTTPS (maldetect-ca.crt, made by tools\setup_https.ps1).
+    When the server URL starts with https:// and maldetect-ca.crt is next to this script, it is used automatically.
 .PARAMETER InstallDir
     Where to install. Default: C:\MalDetectAgent
 #>
@@ -45,6 +46,10 @@ if ($Token -notmatch '^mdt_[0-9a-f]{64}$') {
 $ServerUrl = $ServerUrl.TrimEnd('/')
 if ($ServerUrl -notmatch '^https?://') {
     throw 'ServerUrl must start with http:// or https://, for example http://192.168.1.87/threat2026'
+}
+
+if (-not $CaFile -and $ServerUrl -like 'https://*' -and (Test-Path (Join-Path $SourceDir 'maldetect-ca.crt'))) {
+    $CaFile = Join-Path $SourceDir 'maldetect-ca.crt'
 }
 
 $exe = Join-Path $SourceDir 'MalDetectAgent.exe'
@@ -84,7 +89,8 @@ if (-not $sameFolder) {
 }
 if ($CaFile) {
     if (-not (Test-Path $CaFile)) { throw "Certificate file not found: $CaFile" }
-    Copy-Item $CaFile (Join-Path $InstallDir 'maldetect-server.crt') -Force
+    $caTarget = Join-Path $InstallDir 'maldetect-ca.crt'
+    if ((Resolve-Path $CaFile).Path -ine $caTarget) { Copy-Item $CaFile $caTarget -Force }
 }
 
 # --- config.json (keeps other settings when it already exists) -----------------------------------
@@ -99,7 +105,7 @@ if (Test-Path $configPath) {
     $config = New-Object PSObject
 }
 $settings = @{ server_url = $ServerUrl; device_token = $Token }
-if ($CaFile) { $settings['ca_file'] = 'maldetect-server.crt' }
+if ($CaFile) { $settings['ca_file'] = 'maldetect-ca.crt' }
 foreach ($key in $settings.Keys) {
     if ($config.PSObject.Properties[$key]) { $config.$key = $settings[$key] }
     else { $config | Add-Member -NotePropertyName $key -NotePropertyValue $settings[$key] }

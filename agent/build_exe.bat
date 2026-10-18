@@ -18,7 +18,7 @@ if errorlevel 1 goto :error
 copy /Y config.example.json dist\ >nul
 copy /Y install_agent.ps1 dist\ >nul
 copy /Y uninstall_agent.ps1 dist\ >nul
-if exist maldetect-server.crt copy /Y maldetect-server.crt dist\ >nul
+if exist maldetect-ca.crt copy /Y maldetect-ca.crt dist\ >nul
 
 echo.
 echo Done. Copy the folder below to each lab PC (USB, shared folder, ...):

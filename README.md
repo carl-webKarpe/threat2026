@@ -5,7 +5,7 @@
 MalDetect checks files for malware with the VirusTotal API in two ways:
 
 1. **Upload scanner**: an Admin uploads a file at `admin/scan.php`.
-2. **Endpoint agents**: a small agent runs on other PCs and laptops, watches their Downloads folder, and reports every new download to MalDetect. Admins see the results under **Devices** and **Device Detections**. Nothing is shown on the monitored PC; results appear only on the server. Pages update live, each detection has a details page, and admins get an email when a threat is found.
+2. **Endpoint agents**: a small agent runs on other PCs and laptops, watches their Downloads folder, and reports every new download to MalDetect. Admins see the results under **Devices** and **Device Detections**. Nothing is shown on the monitored PC; results appear only on the server. Pages update live, each detection has a details page, and admins get an email when a threat is found. Admins can export reports (CSV / PDF), install the agent on lab PCs with one command (`agent/install_agent.ps1`), and turn on HTTPS for the LAN (`tools/setup_https.ps1`). Step-by-step instructions are in SETUP-GUIDE.md.
 
 ## Requirements
 

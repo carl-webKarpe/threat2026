@@ -26,4 +26,4 @@ __pycache__/
 /agent/dist/
 /agent/*.spec
 /agent/agent.log*
-/agent/maldetect-server.crt
+/agent/maldetect-ca.crt
