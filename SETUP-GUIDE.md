@@ -464,6 +464,18 @@ Use **Disable** instead if you only want to stop a device for now and keep its h
 
 **Step 2: Test.** On **Devices**, click **Delete** on a device you do not need (for example one that says *Agent not connected yet*). Click **Cancel** first (nothing happens), then **Delete** again and **OK**. A green message confirms it was deleted.
 
+### Change 11: Clear message when a device token is rejected
+
+**What changed:** when the server rejects an agent's token (`HTTP 401`, because the device was deleted, disabled or got a new token), the agent (version 1.1.1) prints **one** message explaining the fix and waits 60 seconds, instead of printing many red errors every few seconds.
+
+**SQL to run:** none.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Update the agent** on each PC (stop it with **Ctrl+C**, copy the new `agent\maldetect_agent.py`, start it again). The first line says `MalDetect agent 1.1.1`.
+
+**If you see the 401 message:** open the **Devices** page on the server. If the device shows **Disabled**, click **Enable**. Otherwise click **New token** (or register the device again if you deleted it), put the new token in that PC's `config.json`, and restart the agent.
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)

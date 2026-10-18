@@ -29,7 +29,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-AGENT_VERSION = "1.1.0"
+AGENT_VERSION = "1.1.1"
 
 # Browsers write partial downloads under these extensions and rename the file when it is complete.
 PARTIAL_DOWNLOAD_SUFFIXES = {".crdownload", ".part", ".partial", ".tmp", ".download", ".opdownload", ".!ut"}
@@ -62,6 +62,8 @@ class MalDetectClient:
         self.base = server_url.rstrip("/") + "/api/agent/"
         self.token = token
         self.context = None if verify_tls else ssl._create_unverified_context()
+        # Set when the server answers 401: the token was deleted, disabled or replaced.
+        self.token_rejected = False
 
     def _send(self, request: urllib.request.Request) -> dict:
         request.add_header("X-Device-Token", self.token)
@@ -74,6 +76,8 @@ class MalDetectClient:
                 payload = json.loads(error.read().decode("utf-8"))
             except (ValueError, OSError):
                 payload = {}
+            if error.code == 401:
+                self.token_rejected = True
             raise ApiError(error.code, payload.get("message", error.reason)) from error
 
     def post_json(self, endpoint: str, body: dict) -> dict:
@@ -127,6 +131,7 @@ class Agent:
         self.client = MalDetectClient(config["server_url"], config["device_token"], config["verify_tls"])
         self.watch_dirs = [Path(os.path.expandvars(os.path.expanduser(d))) for d in config["watch_dirs"]] or default_watch_dirs()
         self.state_path = config_dir / config["state_file"]
+        self.config_path = config_dir / "config.json"
         self.state = self._load_state()
         # path -> (size, mtime) from the previous poll; a file is reported once it stops changing.
         self.last_seen: dict[str, tuple[int, float]] = {}
@@ -259,6 +264,8 @@ class Agent:
         log.info("Scan requested by the administrator: scanning %s", ", ".join(map(str, self.watch_dirs)))
         reported = failed = 0
         for path, stat in list(self.candidate_files()):
+            if self.client.token_rejected:
+                break
             if self.report(path, stat, trigger="manual_scan", command_id=command_id):
                 reported += 1
             else:
@@ -311,6 +318,8 @@ class Agent:
             try:
                 detection = self.client.get(f"result.php?id={int(detection_id)}")["detection"]
             except ApiError as error:
+                if error.status == 401:
+                    break
                 if error.status == 404:
                     self.state["pending"].pop(detection_id, None)
                 log.error("Result check for #%s failed: %s", detection_id, error)
@@ -335,6 +344,18 @@ class Agent:
             if time.time() >= next_result_poll and self.state["pending"]:
                 self.poll_pending()
                 next_result_poll = time.time() + self.config["result_poll_seconds"]
+            if self.client.token_rejected:
+                log.error(
+                    "The server rejected this device's token (HTTP 401). The device was deleted or disabled on the "
+                    "Devices page, or it got a new token. Fix: on the Devices page click Enable or New token, put the "
+                    "token in %s, then restart the agent. Trying again in 60 seconds.",
+                    self.config_path,
+                )
+                self.client.token_rejected = False
+                if once:
+                    return
+                time.sleep(60)
+                continue
             if once:
                 # A file must be seen twice before it is reported, so do a second pass.
                 time.sleep(1)
@@ -366,7 +387,9 @@ def main() -> None:
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     config_path = Path(args.config).resolve()
     try:
-        Agent(load_config(config_path), config_path.parent).run(once=args.once)
+        agent = Agent(load_config(config_path), config_path.parent)
+        agent.config_path = config_path
+        agent.run(once=args.once)
     except KeyboardInterrupt:
         log.info("Agent stopped.")
 
