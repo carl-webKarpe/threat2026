@@ -39,10 +39,22 @@ function scan_value(mixed $value, string $fallback = 'Not available'): string
     return htmlspecialchars($value === null || $value === '' ? $fallback : (string) $value, ENT_QUOTES, 'UTF-8');
 }
 ?>
+<style media="print">
+    body { background: #fff !important; color: #111827 !important; }
+    aside, .no-print, footer { display: none !important; }
+    main { padding: 0 !important; }
+    main, section, dl, dd, h1, h2, p, dt, span { color: #111827 !important; }
+    section { max-width: none !important; border: 0 !important; background: #fff !important; padding: 0 !important; }
+    dl { break-inside: avoid; }
+    dd { overflow-wrap: anywhere; }
+</style>
 <div class="flex min-h-screen flex-col lg:flex-row">
     <div><?php require __DIR__ . '/../includes/admin_sidebar.php'; ?></div>
     <main class="min-w-0 flex-1 p-6 sm:p-10">
-        <a class="text-sm text-violet-300 hover:text-white" href="history.php">&larr; Back to Scan History</a>
+        <div class="no-print flex flex-wrap items-center justify-between gap-4">
+            <a class="text-sm text-violet-300 hover:text-white" href="history.php">&larr; Back to Scan History</a>
+            <?php if ($error === ''): ?><button class="rounded-xl bg-violet-300 px-5 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-violet-200" type="button" onclick="window.print()">Print Scan Details</button><?php endif; ?>
+        </div>
         <p class="mono mt-8 text-xs tracking-[.2em] text-violet-300">SCAN RESULT</p>
         <h1 class="mt-3 text-3xl font-bold">Scan Details</h1>
         <?php if ($error !== ''): ?>

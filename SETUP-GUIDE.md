@@ -267,6 +267,57 @@ SELECT username, email, role FROM users;
 
 ---
 
+### Change 6: Clean up the file-monitor files and add the Print button
+
+**What changed:** removed `auth/admin/`, `lib/`, `config/file_activity_monitor.php` and `database/migrations/phase9_file_monitoring.sql`. They crashed when opened and duplicated what the agent already does. The **Print Scan Details** button from those files is now on the real Scan Details page (`admin/view_scan.php`). Git still keeps the removed files in its history if you ever need them.
+
+**SQL to run:** none. If you already imported `phase9_file_monitoring.sql`, you can remove its unused tables in phpMyAdmin (**SQL** tab):
+
+```sql
+USE maldetect_db;
+DROP TABLE IF EXISTS file_monitor_events, file_monitor_state, file_monitor_status;
+```
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Test.** Sign in as `admin`, open **Scan History**, click **View Result** on any scan, and click **Print Scan Details**. The print preview shows only the scan details, without the sidebar.
+
+---
+
+## Part 3b: Test everything on one laptop (before the computer lab)
+
+Your laptop can be **both** the server and the monitored PC. This tests the whole system except the network cable.
+
+1. Start **Apache** and **MySQL** in XAMPP.
+2. Add your VirusTotal key in `config\scanner.local.php` (see Part 4, "On the server PC", step 3).
+3. Sign in as `admin`, open **Devices**, register a device named `My Laptop`, and copy the token.
+4. Make the agent's config:
+
+   ```text
+   cd C:\xampp1\htdocs\threat2026\agent
+   copy config.example.json config.json
+   notepad config.json
+   ```
+
+   Set these two lines, then save:
+
+   ```json
+   "server_url": "http://localhost/threat2026",
+   "device_token": "mdt_the_token_you_copied",
+   ```
+
+5. Start the agent and leave the window open:
+
+   ```text
+   python maldetect_agent.py
+   ```
+
+6. Download any file in your browser. Within a few seconds the agent prints `Reported <file name>`, and the file appears in **Device Detections** with its risk and engine results. On **Devices**, `My Laptop` shows **● Online**.
+
+**Later, in the computer lab,** follow Part 4. The only differences are that the agent runs on the lab PCs, and `server_url` uses the server's IP address instead of `localhost` (for example `http://192.168.1.10/threat2026`).
+
+---
+
 ## Part 4: Set up download detection on another PC
 
 ### On the server PC (the one with XAMPP)
