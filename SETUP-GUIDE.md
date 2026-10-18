@@ -525,6 +525,55 @@ SHOW COLUMNS FROM maldetect_db.devices LIKE 'agent_stopped_at';
 
 **Step 2: Test.** Open **Reports**, choose a date range that includes your test downloads, click **Apply Filters**, then **Download CSV** (open it in Excel) and **Print / Save as PDF**.
 
+### Change 14: Agent installer (MalDetectAgent.exe, starts automatically)
+
+**What changed:**
+
+- `agent\build_exe.bat` builds **MalDetectAgent.exe**, so lab PCs **do not need Python**.
+- `agent\install_agent.ps1` installs the agent on a PC in one command: copies it to `C:\MalDetectAgent`, writes `config.json`, checks the connection to the server, and creates a Windows task **"MalDetect Agent"** that starts it **hidden every time anyone logs in**. Then it starts it.
+- `agent\uninstall_agent.ps1` stops and removes it (and tells the server, so the device goes Offline right away).
+- The agent (version 1.3.0) writes its messages to `C:\MalDetectAgent\agent.log` when it runs hidden, and only one copy runs at a time per Windows user.
+
+**SQL to run:** none.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Build the .exe once (on Laptop 1, which has Python).**
+
+```text
+cd C:\xampp1\htdocs\threat2026\agent
+build_exe.bat
+```
+
+It takes 1–2 minutes. When it says **Done**, the folder `agent\dist` contains `MalDetectAgent.exe`, `install_agent.ps1`, `uninstall_agent.ps1` and `config.example.json`. Rebuild after every agent update.
+
+> If Windows Defender or another antivirus flags `MalDetectAgent.exe`: this is a known false alarm for programs built with PyInstaller. Allow it in **Windows Security > Protection history** on the lab PCs, or install with Python instead (Step 3 also works from the normal `agent` folder when Python is installed).
+
+**Step 3: Install on each lab PC (or Laptop 2).**
+
+1. On the server's **Devices** page, register the PC (or click **New token** on its row) and copy the token.
+2. Copy the `dist` folder to the PC (USB, shared folder…).
+3. On the PC, open **PowerShell as Administrator** (right-click > **Run as administrator**), go to the copied folder and run (use your server IP and the token):
+
+   ```powershell
+   cd D:\dist
+   powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://192.168.1.87/threat2026 -Token mdt_THE_TOKEN
+   ```
+
+4. It prints **MalDetect agent installed.** and the last lines of the log. On the server's **Devices** page the PC shows **● Online**.
+
+There is no window: the agent runs hidden. It starts again by itself after every restart or login. To see what it is doing, open `C:\MalDetectAgent\agent.log`.
+
+**To change the token or server address later:** run the same install command again with the new values.
+
+**To remove the agent:** in PowerShell as Administrator:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File C:\MalDetectAgent\uninstall_agent.ps1
+```
+
+Add `-RemoveFiles` to also delete `C:\MalDetectAgent`.
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)

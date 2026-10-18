@@ -6,15 +6,19 @@ it with VirusTotal. Results are shown to administrators on the MalDetect server;
 
 Uses only the Python standard library (Python 3.9+). Usage:
 
-    python maldetect_agent.py                 # uses config.json next to this script
+    python maldetect_agent.py                 # uses config.json next to this script (or next to MalDetectAgent.exe)
     python maldetect_agent.py --config other.json
     python maldetect_agent.py --once          # one scan of the folders, then exit (for testing)
+
+When it runs without a console window (pythonw.exe or MalDetectAgent.exe started by install_agent.ps1),
+it writes its messages to agent.log next to config.json.
 """
 
 from __future__ import annotations
 
 import argparse
 import hashlib
+import logging.handlers
 import json
 import logging
 import os
@@ -29,7 +33,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-AGENT_VERSION = "1.2.0"
+AGENT_VERSION = "1.3.0"
 
 # Browsers write partial downloads under these extensions and rename the file when it is complete.
 PARTIAL_DOWNLOAD_SUFFIXES = {".crdownload", ".part", ".partial", ".tmp", ".download", ".opdownload", ".!ut"}
@@ -45,6 +49,7 @@ DEFAULT_CONFIG = {
     "upload_unknown_files": True,
     "report_existing_files": False,
     "verify_tls": True,
+    "ca_file": "",  # certificate file of the server for HTTPS with your own certificate (see SETUP-GUIDE.md)
     "state_file": "agent_state.json",
 }
 
@@ -58,10 +63,16 @@ class ApiError(Exception):
 
 
 class MalDetectClient:
-    def __init__(self, server_url: str, token: str, verify_tls: bool):
+    def __init__(self, server_url: str, token: str, verify_tls: bool, ca_file: str = ""):
         self.base = server_url.rstrip("/") + "/api/agent/"
         self.token = token
-        self.context = None if verify_tls else ssl._create_unverified_context()
+        if not verify_tls:
+            self.context = ssl._create_unverified_context()
+        elif ca_file:
+            # Trust exactly this certificate (the MalDetect server's own certificate) for HTTPS.
+            self.context = ssl.create_default_context(cafile=ca_file)
+        else:
+            self.context = None
         # Set when the server answers 401: the token was deleted, disabled or replaced.
         self.token_rejected = False
 
@@ -128,7 +139,10 @@ def default_watch_dirs() -> list[Path]:
 class Agent:
     def __init__(self, config: dict, config_dir: Path):
         self.config = config
-        self.client = MalDetectClient(config["server_url"], config["device_token"], config["verify_tls"])
+        ca_file = str(config.get("ca_file") or "")
+        if ca_file and not Path(ca_file).is_absolute():
+            ca_file = str(config_dir / ca_file)
+        self.client = MalDetectClient(config["server_url"], config["device_token"], config["verify_tls"], ca_file)
         self.watch_dirs = [Path(os.path.expandvars(os.path.expanduser(d))) for d in config["watch_dirs"]] or default_watch_dirs()
         self.state_path = config_dir / config["state_file"]
         self.config_path = config_dir / "config.json"
@@ -376,17 +390,53 @@ class Agent:
             time.sleep(self.config["poll_seconds"])
 
 
+def fail(message: str) -> None:
+    """Logs the problem (also visible in agent.log when there is no window) and exits."""
+    log.error(message)
+    sys.exit(1)
+
+
 def load_config(path: Path) -> dict:
     try:
-        user_config = json.loads(path.read_text(encoding="utf-8"))
+        user_config = json.loads(path.read_text(encoding="utf-8-sig"))
     except FileNotFoundError:
-        sys.exit(f"Config file not found: {path}. Copy config.example.json to config.json and fill it in.")
+        fail(f"Config file not found: {path}. Copy config.example.json to config.json and fill it in.")
     except ValueError as error:
-        sys.exit(f"Config file {path} is not valid JSON: {error}")
+        fail(f"Config file {path} is not valid JSON: {error}")
     config = {**DEFAULT_CONFIG, **user_config}
-    if not config["device_token"].startswith("mdt_"):
-        sys.exit("device_token is missing. Register this PC in MalDetect (Admin > Devices) and paste its token.")
+    if not str(config["device_token"]).startswith("mdt_"):
+        fail("device_token is missing. Register this PC in MalDetect (Admin > Devices) and paste its token.")
     return config
+
+
+def program_dir() -> Path:
+    """Folder of MalDetectAgent.exe when built with PyInstaller, otherwise the folder of this script."""
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent
+
+
+def setup_logging(verbose: bool, log_file: Path | None) -> None:
+    handler: logging.Handler
+    if log_file is not None:
+        handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1_000_000, backupCount=3, encoding="utf-8")
+    else:
+        handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, handlers=[handler])
+
+
+def claim_single_instance(config_path: Path) -> bool:
+    """Returns False when another agent already runs with this config for the same Windows user."""
+    if os.name != "nt":
+        return True
+    import ctypes
+
+    name = "Local\\MalDetectAgent-" + hashlib.sha256(str(config_path).lower().encode()).hexdigest()[:16]
+    handle = ctypes.windll.kernel32.CreateMutexW(None, False, name)
+    already_running = ctypes.windll.kernel32.GetLastError() == 183  # ERROR_ALREADY_EXISTS
+    claim_single_instance.handle = handle  # keep the mutex open for the life of the process
+    return not already_running
 
 
 def watch_console_close(agent: "Agent") -> None:
@@ -411,12 +461,19 @@ def watch_console_close(agent: "Agent") -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="MalDetect download-monitoring agent")
-    parser.add_argument("--config", default=str(Path(__file__).with_name("config.json")))
+    parser.add_argument("--config", default=str(program_dir() / "config.json"))
     parser.add_argument("--once", action="store_true", help="scan once and exit")
     parser.add_argument("--verbose", action="store_true")
+    parser.add_argument("--log-file", help="write messages to this file instead of the console")
     args = parser.parse_args()
-    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     config_path = Path(args.config).resolve()
+    # Without a console (pythonw.exe, or the .exe started at login) nobody would see the messages: use a file.
+    no_console = sys.stderr is None or sys.stdout is None
+    log_file = Path(args.log_file) if args.log_file else (config_path.parent / "agent.log" if no_console else None)
+    setup_logging(args.verbose, log_file)
+    if not claim_single_instance(config_path):
+        log.info("Another MalDetect agent is already running for this user with %s; exiting.", config_path)
+        return
     try:
         agent = Agent(load_config(config_path), config_path.parent)
     except KeyboardInterrupt:

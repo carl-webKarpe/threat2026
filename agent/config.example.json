@@ -8,5 +8,6 @@
     "command_poll_seconds": 5,
     "upload_unknown_files": true,
     "report_existing_files": false,
-    "verify_tls": true
+    "verify_tls": true,
+    "ca_file": ""
 }

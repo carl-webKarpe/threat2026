@@ -20,3 +20,10 @@
 /agent/config.json
 /agent/agent_state.json
 __pycache__/
+
+# Agent build output and per-PC files
+/agent/build/
+/agent/dist/
+/agent/*.spec
+/agent/agent.log*
+/agent/maldetect-server.crt
