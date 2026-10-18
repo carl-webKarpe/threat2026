@@ -2,6 +2,8 @@
 
 **Setting up or updating? Follow [SETUP-GUIDE.md](SETUP-GUIDE.md) step by step.**
 
+**Using the system? Follow [USER-GUIDE.md](USER-GUIDE.md): register a PC, install the agent, watch downloads, scan, alerts and reports.**
+
 MalDetect checks files for malware with the VirusTotal API in two ways:
 
 1. **Upload scanner**: an Admin uploads a file at `admin/scan.php`.
