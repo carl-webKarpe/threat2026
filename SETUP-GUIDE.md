@@ -404,6 +404,54 @@ Both should return one row.
 4. Refresh **Devices**: **Last Scan** shows **Done · N file(s)**.
 5. Open **Device Detections** and set **Source** to **Manual scans**. Every file from the Downloads folder is listed with a **Manual scan** label. Results fill in over the next minutes.
 
+### Change 9: Live updates, detection details page and threat alert emails
+
+**What changed:**
+
+- **Live updates:** **Devices**, **Device Detections** and the **Dashboard** refresh themselves every 5 seconds. A green **● Live · updated …** label shows it is working. New rows flash green for a moment. No more F5.
+- **Detection details page:** click a file name on **Device Detections** (or a threat on the Dashboard) to see everything about it: verdict, engine counts, threat name, SHA-256, where it was downloaded from, the device, and the timeline. It has a **Print Detection Details** button, and it updates live while VirusTotal is still working.
+- **Threat alert emails:** when a file on any device is found **Malicious** or **Suspicious**, every active Admin and Superadmin with a real email address gets one email with the details and a link to the detection. Each detection is emailed only once, and at most 30 alert emails are sent per hour.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Run this SQL in Workbench** (same as `database/migrations/phase11_threat_alerts.sql`), with **Ctrl+Shift+Enter**:
+
+```sql
+USE maldetect_db;
+
+-- Phase 11: email alerts for threats found on devices.
+-- Safe to run more than once.
+
+-- When the admin alert email for a threat was sent (NULL = not sent). Prevents duplicate emails.
+SET @sql := IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'device_detections' AND COLUMN_NAME = 'alert_sent_at') = 0,
+    'ALTER TABLE device_detections ADD COLUMN alert_sent_at TIMESTAMP NULL AFTER checked_at', 'DO 0');
+PREPARE phase11_stmt FROM @sql; EXECUTE phase11_stmt; DEALLOCATE PREPARE phase11_stmt;
+```
+
+Check it worked; this should return one row:
+
+```sql
+SHOW COLUMNS FROM maldetect_db.device_detections LIKE 'alert_sent_at';
+```
+
+**Step 3: Choose who gets alert emails.** Alerts go to active Admin and Superadmin accounts with a real email. The test accounts use fake `@example.test` addresses, which are skipped. To get alerts as `admin` too, run (use your email):
+
+```sql
+USE maldetect_db;
+UPDATE users SET email = 'your-email@gmail.com' WHERE username = 'admin';
+SELECT username, email, role FROM users;
+```
+
+Alerts are sent with the same Gmail settings as the Superadmin code (`config\mail.local.php`), so that must already work.
+
+**Step 4: Test.**
+
+1. Open **Device Detections** on the server. The label next to the title says **● Live · updated** with the time.
+2. On the monitored laptop, download any file. Within about 5 seconds it appears at the top of the list with a green flash, without refreshing.
+3. Click the file name: the **Detection Details** page opens. Try **Print Detection Details**.
+4. To test an alert email, download the EICAR test file (https://www.eicar.org/download-anti-malware-testfile/) on the monitored laptop. It is harmless, but VirusTotal reports it as malicious. Windows Defender may delete it first; if so, allow it in **Windows Security > Protection history** only on the test laptop. Within a minute you get a **"MalDetect alert: Malicious file on …"** email, and the details page shows **Admin Alert Email: Sent**.
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)

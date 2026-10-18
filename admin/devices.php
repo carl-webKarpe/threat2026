@@ -134,7 +134,7 @@ require_once __DIR__ . '/../includes/header.php';
 	<div><?php require __DIR__ . '/../includes/admin_sidebar.php'; ?></div>
 	<main class="min-w-0 flex-1 p-6 sm:p-10">
 		<p class="mono text-xs tracking-[.2em] text-violet-300">ENDPOINT AGENTS</p>
-		<h1 class="mt-3 text-3xl font-bold">Devices</h1>
+		<div class="mt-3 flex flex-wrap items-baseline gap-4"><h1 class="text-3xl font-bold">Devices</h1><span data-live-indicator class="text-xs text-emerald-300">● Live</span></div>
 		<p class="mt-2 max-w-3xl text-slate-400">Register each PC or laptop, then run the MalDetect agent on it with the device token. The agent reports every downloaded file and MalDetect checks it with VirusTotal.</p>
 
 		<?php if ($flash !== ''): ?><p class="mt-6 rounded-xl border border-emerald-300/20 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-200" role="status"><?= $h($flash) ?></p><?php endif; ?>
@@ -164,12 +164,12 @@ require_once __DIR__ . '/../includes/header.php';
 		</form>
 		<?php endif; ?>
 
-		<div class="mt-8 overflow-x-auto rounded-2xl border border-white/10 bg-white/[.03]">
+		<div class="mt-8 overflow-x-auto rounded-2xl border border-white/10 bg-white/[.03]" data-live-region="devices">
 			<table class="w-full min-w-[1150px] text-left text-sm">
 				<thead class="border-b border-white/10 text-xs uppercase tracking-wider text-slate-500"><tr><th class="px-5 py-4">Device</th><th class="px-5 py-4">Status</th><th class="px-5 py-4">Last Seen</th><th class="px-5 py-4">Downloads</th><th class="px-5 py-4">Threats</th><th class="px-5 py-4">Last Scan</th><th class="px-5 py-4">Token</th><th class="px-5 py-4">Actions</th></tr></thead>
 				<tbody class="divide-y divide-white/5">
 				<?php foreach ($devices as $device): ?>
-					<tr class="text-slate-300">
+					<tr class="text-slate-300" data-row-id="<?= (int) $device['id'] ?>">
 						<td class="px-5 py-4"><p class="font-semibold text-white"><?= $h($device['name']) ?></p><p class="mt-1 text-xs text-slate-500"><?= $h($device['hostname'] ?: 'Agent not connected yet') ?><?= $device['os_info'] ? ' · ' . $h($device['os_info']) : '' ?></p></td>
 						<td class="px-5 py-4"><?php if (!(int) $device['is_active']): ?><span class="text-red-200">Disabled</span><?php elseif ((int) $device['is_online']): ?><span class="text-emerald-300">● Online</span><?php else: ?><span class="text-slate-500">○ Offline</span><?php endif; ?></td>
 						<td class="whitespace-nowrap px-5 py-4 text-slate-400"><?= $h($device['last_seen_at'] ?: 'Never') ?><p class="text-xs text-slate-600"><?= $h($device['last_ip'] ?? '') ?></p></td>
@@ -191,4 +191,5 @@ require_once __DIR__ . '/../includes/header.php';
 		</div>
 	</main>
 </div>
+<?php require __DIR__ . '/../includes/live_refresh.php'; ?>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

@@ -1,6 +1,6 @@
 -- MalDetect full database install (fresh install).
 -- In MySQL Workbench: File > Open SQL Script > this file, then Query > Execute All (Ctrl+Shift+Enter).
--- Creates maldetect_db with every table up to Phase 10. Safe to run again: existing tables and seed accounts are kept.
+-- Creates maldetect_db with every table up to Phase 11. Safe to run again: existing tables and seed accounts are kept.
 -- For a database that already exists from an older phase, you may instead run only the files in migrations/.
 
 
@@ -202,3 +202,10 @@ SET @sql := IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'device_detections' AND COLUMN_NAME = 'command_id') = 0,
     'ALTER TABLE device_detections ADD COLUMN command_id BIGINT UNSIGNED NULL AFTER trigger_type', 'DO 0');
 PREPARE phase10_stmt FROM @sql; EXECUTE phase10_stmt; DEALLOCATE PREPARE phase10_stmt;
+
+-- Phase 11: email alerts for threats found on devices
+-- When the admin alert email for a threat was sent (NULL = not sent). Prevents duplicate emails.
+SET @sql := IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'device_detections' AND COLUMN_NAME = 'alert_sent_at') = 0,
+    'ALTER TABLE device_detections ADD COLUMN alert_sent_at TIMESTAMP NULL AFTER checked_at', 'DO 0');
+PREPARE phase11_stmt FROM @sql; EXECUTE phase11_stmt; DEALLOCATE PREPARE phase11_stmt;

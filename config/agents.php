@@ -18,6 +18,12 @@ const VIRUSTOTAL_REQUESTS_PER_MINUTE = 4;
 /** A "Scan now" command that no agent picks up within this many hours expires. */
 const AGENT_COMMAND_EXPIRY_HOURS = 24;
 
+/** Email active admins and superadmins when a device download is Malicious or Suspicious. */
+const AGENT_THREAT_EMAIL_ALERTS = true;
+
+/** Upper limit on alert emails per hour, so a folder full of threats cannot flood the inbox. */
+const AGENT_MAX_ALERT_EMAILS_PER_HOUR = 30;
+
 /** Commands an admin can send to a device. */
 const AGENT_COMMAND_TYPES = ['scan_downloads' => 'Scan Downloads'];
 
@@ -166,6 +172,131 @@ function agent_store_verdict(PDO $pdo, int $detectionId, array $verdict): void
     }
     $statement = $pdo->prepare('UPDATE device_detections SET ' . implode(', ', $assignments) . ' WHERE id = :id');
     $statement->execute($parameters);
+
+    if (in_array($verdict['scan_result'] ?? null, ['MALICIOUS', 'SUSPICIOUS'], true)) {
+        agent_send_threat_alert($pdo, $detectionId);
+    }
+}
+
+/** Base URL of this MalDetect installation as seen by the current request, or null outside a web request. */
+function agent_server_base_url(): ?string
+{
+    $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+    if ($host === '' || !preg_match('/^[A-Za-z0-9.\-:\[\]]+$/', $host)) {
+        return null;
+    }
+    $scheme = !empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off' ? 'https' : 'http';
+    // Alerts are sent from api/agent/*.php, two folders below the project root.
+    $projectPath = rtrim(str_replace('\\', '/', dirname((string) ($_SERVER['SCRIPT_NAME'] ?? ''), 3)), '/');
+
+    return $scheme . '://' . $host . $projectPath;
+}
+
+/**
+ * Emails a threat alert about one detection to every active admin and superadmin with a real address.
+ * Sent at most once per detection (device_detections.alert_sent_at). Never throws.
+ */
+function agent_send_threat_alert(PDO $pdo, int $detectionId): void
+{
+    if (!AGENT_THREAT_EMAIL_ALERTS) {
+        return;
+    }
+    try {
+        $sentRecently = (int) $pdo->query(
+            'SELECT COUNT(*) FROM device_detections WHERE alert_sent_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)'
+        )->fetchColumn();
+        if ($sentRecently >= AGENT_MAX_ALERT_EMAILS_PER_HOUR) {
+            error_log("Threat alert for detection #{$detectionId} skipped: hourly email limit reached.");
+            return;
+        }
+        // Claim the alert first so two requests can never email the same detection twice.
+        $claim = $pdo->prepare('UPDATE device_detections SET alert_sent_at = CURRENT_TIMESTAMP WHERE id = :id AND alert_sent_at IS NULL');
+        $claim->execute(['id' => $detectionId]);
+        if ($claim->rowCount() !== 1) {
+            return;
+        }
+
+        $statement = $pdo->prepare(
+            'SELECT device_detections.*, devices.name AS device_name, devices.hostname, devices.last_ip
+             FROM device_detections INNER JOIN devices ON devices.id = device_detections.device_id
+             WHERE device_detections.id = :id'
+        );
+        $statement->execute(['id' => $detectionId]);
+        $detection = $statement->fetch();
+        $recipients = $pdo->query(
+            "SELECT name, email FROM users WHERE role IN ('admin', 'superadmin') AND is_active = 1 AND email IS NOT NULL AND email <> ''"
+        )->fetchAll();
+        // Skip the placeholder addresses from the seed data; mail to them would only bounce.
+        $recipients = array_values(array_filter(
+            $recipients,
+            static fn (array $user): bool => filter_var($user['email'], FILTER_VALIDATE_EMAIL) !== false
+                && !preg_match('/\.(test|example|invalid|localhost)$/i', (string) $user['email']),
+        ));
+        if (!is_array($detection) || !$recipients) {
+            error_log("Threat alert for detection #{$detectionId} not sent: no admin has a real email address.");
+            return;
+        }
+
+        require_once __DIR__ . '/../auth/otp_functions.php';
+        if (!class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
+            throw new RuntimeException('PHPMailer is not installed. Run composer install.');
+        }
+        $mailConfig = getMailConfig();
+
+        $h = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+        $baseUrl = agent_server_base_url();
+        $detailsUrl = $baseUrl !== null ? $baseUrl . '/admin/view_detection.php?id=' . $detectionId : null;
+        $rows = [
+            'File' => $detection['file_name'],
+            'Device' => $detection['device_name'] . ($detection['hostname'] ? ' (' . $detection['hostname'] . ')' : ''),
+            'Risk level' => $detection['risk_level'],
+            'Threat name' => $detection['threat_name'] ?: 'Not named by the engines',
+            'Engines' => (int) $detection['malicious_count'] . ' malicious, ' . (int) $detection['suspicious_count'] . ' suspicious, of ' . (int) $detection['total_engines'],
+            'Found by' => ($detection['trigger_type'] ?? 'download') === 'manual_scan' ? 'Manual scan' : 'New download',
+            'Downloaded from' => $detection['source_url'] ?: 'Unknown',
+            'File path' => $detection['file_path'] ?: 'Unknown',
+            'SHA-256' => $detection['sha256_hash'],
+            'Reported at' => $detection['created_at'],
+        ];
+        $htmlRows = '';
+        $textRows = '';
+        foreach ($rows as $label => $value) {
+            $htmlRows .= '<tr><td style="padding:6px 12px 6px 0;color:#64748b;vertical-align:top;white-space:nowrap">' . $h($label)
+                . '</td><td style="padding:6px 0;color:#0f172a;word-break:break-all">' . $h($value) . '</td></tr>';
+            $textRows .= $label . ': ' . $value . "\n";
+        }
+        $color = $detection['scan_result'] === 'MALICIOUS' ? '#dc2626' : '#d97706';
+        $html = '<div style="font-family:Arial,sans-serif;max-width:600px">'
+            . '<h2 style="color:' . $color . ';margin:0 0 8px">' . $h($detection['risk_level']) . ' file detected</h2>'
+            . '<p style="color:#334155;margin:0 0 16px">MalDetect found a dangerous file on <strong>' . $h($detection['device_name']) . '</strong>.</p>'
+            . '<table style="border-collapse:collapse;font-size:14px">' . $htmlRows . '</table>'
+            . ($detailsUrl !== null ? '<p style="margin-top:20px"><a href="' . $h($detailsUrl) . '" style="color:#7c3aed">Open the detection in MalDetect</a></p>' : '')
+            . '<p style="color:#94a3b8;font-size:12px;margin-top:24px">The link and URLs above come from the monitored device. Do not open the file or the download link.</p></div>';
+
+        $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+        $mail->isSMTP();
+        $mail->Host = $mailConfig['host'];
+        $mail->SMTPAuth = true;
+        $mail->Username = $mailConfig['username'];
+        $mail->Password = $mailConfig['password'];
+        $mail->SMTPSecure = $mailConfig['encryption'] === 'tls'
+            ? \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS
+            : \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+        $mail->Port = (int) $mailConfig['port'];
+        $mail->Timeout = 15;
+        $mail->CharSet = 'UTF-8';
+        $mail->setFrom($mailConfig['from_email'], $mailConfig['from_name']);
+        foreach ($recipients as $recipient) {
+            $mail->addBCC($recipient['email'], (string) $recipient['name']);
+        }
+        $mail->isHTML(true);
+        $mail->Subject = 'MalDetect alert: ' . $detection['risk_level'] . ' file on ' . $detection['device_name'];
+        $mail->Body = $html;
+        $mail->AltBody = "MalDetect found a dangerous file.\n\n" . $textRows . ($detailsUrl !== null ? "\nDetails: {$detailsUrl}\n" : '');
+        $mail->send();
+    } catch (Throwable $exception) {
+        error_log("Threat alert email for detection #{$detectionId} failed: " . $exception->getMessage());
+    }
 }
 
 /**

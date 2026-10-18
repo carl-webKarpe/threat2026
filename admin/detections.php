@@ -85,7 +85,7 @@ require_once __DIR__ . '/../includes/header.php';
 	<div><?php require __DIR__ . '/../includes/admin_sidebar.php'; ?></div>
 	<main class="min-w-0 flex-1 p-6 sm:p-10">
 		<p class="mono text-xs tracking-[.2em] text-violet-300">ENDPOINT ACTIVITY</p>
-		<h1 class="mt-3 text-3xl font-bold">Device Detections</h1>
+		<div class="mt-3 flex flex-wrap items-baseline gap-4"><h1 class="text-3xl font-bold">Device Detections</h1><span data-live-indicator class="text-xs text-emerald-300">● Live</span></div>
 		<p class="mt-2 text-slate-400">Files downloaded on registered devices and their VirusTotal verdicts.</p>
 		<form class="mt-8 grid gap-3 rounded-2xl border border-white/10 bg-white/[.03] p-5 sm:grid-cols-5" method="get">
 			<label class="text-sm text-slate-400 sm:col-span-2">File name or SHA-256<input class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none focus:border-violet-300/50" type="search" name="search" value="<?= $h($search) ?>"></label>
@@ -94,6 +94,7 @@ require_once __DIR__ . '/../includes/header.php';
 			<label class="text-sm text-slate-400">Source<select class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100" name="trigger"><option value="">All</option><?php foreach ($allowedTriggers as $value => $label): ?><option value="<?= $h($value) ?>" <?= $triggerFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach; ?></select></label>
 			<button class="rounded-xl bg-violet-300 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-violet-200 sm:col-span-5 sm:justify-self-end" type="submit">Apply Filters</button>
 		</form>
+		<div data-live-region="detections">
 		<?php if ($loadError): ?>
 			<div class="mt-8 rounded-2xl border border-red-300/20 bg-red-400/10 p-5 text-sm text-red-200">Detections are unavailable. Run database/migrations/phase9_devices.sql first.</div>
 		<?php elseif (!$detections): ?>
@@ -103,8 +104,8 @@ require_once __DIR__ . '/../includes/header.php';
 				<thead class="border-b border-white/10 text-xs uppercase tracking-wider text-slate-500"><tr><th class="px-5 py-4">File</th><th class="px-5 py-4">Device</th><th class="px-5 py-4">Source</th><th class="px-5 py-4">Result</th><th class="px-5 py-4">Engines</th><th class="px-5 py-4">Reported</th><th class="px-5 py-4">VirusTotal</th></tr></thead>
 				<tbody class="divide-y divide-white/5">
 				<?php foreach ($detections as $detection): ?>
-					<tr class="text-slate-300">
-						<td class="px-5 py-4"><p class="max-w-[220px] truncate font-semibold text-white" title="<?= $h($detection['file_path'] ?? $detection['file_name']) ?>"><?= $h($detection['file_name']) ?></p><p class="mt-1 text-xs text-slate-500"><?= $detection['file_size'] === null ? '' : $h(scanner_format_size((int) $detection['file_size'])) ?><?php if (($detection['trigger_type'] ?? 'download') === 'manual_scan'): ?> <span class="ml-1 rounded-full border border-violet-300/30 px-2 py-0.5 text-[10px] uppercase tracking-wider text-violet-200">Manual scan</span><?php endif; ?></p></td>
+					<tr class="text-slate-300" data-row-id="<?= (int) $detection['id'] ?>">
+						<td class="px-5 py-4"><a class="block max-w-[220px] truncate font-semibold text-white underline-offset-4 hover:text-violet-200 hover:underline" href="view_detection.php?id=<?= (int) $detection['id'] ?>" title="<?= $h($detection['file_path'] ?? $detection['file_name']) ?>"><?= $h($detection['file_name']) ?></a><p class="mt-1 text-xs text-slate-500"><?= $detection['file_size'] === null ? '' : $h(scanner_format_size((int) $detection['file_size'])) ?><?php if (($detection['trigger_type'] ?? 'download') === 'manual_scan'): ?> <span class="ml-1 rounded-full border border-violet-300/30 px-2 py-0.5 text-[10px] uppercase tracking-wider text-violet-200">Manual scan</span><?php endif; ?></p></td>
 						<td class="px-5 py-4"><?= $h($detection['device_name']) ?><p class="mt-1 text-xs text-slate-500"><?= $h($detection['hostname'] ?? '') ?></p></td>
 						<td class="max-w-[220px] truncate px-5 py-4 text-xs text-slate-400" title="<?= $h($detection['source_url'] ?? '') ?>"><?= $h($detection['source_url'] ?: 'Unknown') ?></td>
 						<td class="px-5 py-4"><p class="font-semibold <?= $resultClass($detection['scan_result']) ?>"><?= $h($detection['risk_level'] ?: ucfirst((string) $detection['scan_status'])) ?></p><p class="mt-1 max-w-[220px] truncate text-xs text-slate-500"><?= $h($detection['threat_name'] ?? '') ?></p></td>
@@ -117,6 +118,8 @@ require_once __DIR__ . '/../includes/header.php';
 			</table></div>
 			<?php if ($pages > 1): ?><nav class="mt-6 flex items-center justify-between text-sm" aria-label="Detection pages"><span class="text-slate-500">Page <?= $page ?> of <?= $pages ?> (<?= $total ?> downloads)</span><div class="flex gap-2"><?php if ($page > 1): ?><a class="rounded-lg border border-white/10 px-3 py-2 text-slate-300" href="<?= $h($pageUrl($page - 1)) ?>">Previous</a><?php endif; ?><?php if ($page < $pages): ?><a class="rounded-lg border border-white/10 px-3 py-2 text-slate-300" href="<?= $h($pageUrl($page + 1)) ?>">Next</a><?php endif; ?></div></nav><?php endif; ?>
 		<?php endif; ?>
+		</div>
 	</main>
 </div>
+<?php require __DIR__ . '/../includes/live_refresh.php'; ?>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
