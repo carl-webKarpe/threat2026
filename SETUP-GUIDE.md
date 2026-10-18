@@ -413,6 +413,7 @@ Your laptop can be **both** the server and the monitored PC. This tests the whol
 | Problem | Fix |
 | --- | --- |
 | XAMPP: MySQL does not turn green, or the log says *"Port 3306 in use"* | That is expected: MySQL80 already uses port 3306. Leave XAMPP's MySQL stopped and use MySQL80 (Change 7). |
+| "Unable to complete login" and `apache\logs\error.log` says **"could not find driver"** | PHP's MySQL driver is off. Check `C:\xampp1\php\php.ini`: if it is empty (0 bytes), copy `php.ini-development` over it. Remove the `;` before `extension=curl`, `fileinfo`, `mbstring`, `openssl` and `pdo_mysql`; add `extension_dir = "C:\xampp1\php\ext"`, `curl.cainfo` and `openssl.cafile` (pointing to `C:\xampp1\apache\bin\curl-ca-bundle.crt`), `upload_max_filesize = 20M` and `post_max_size = 21M` at the end; then restart Apache. Check with `C:\xampp1\php\php.exe -m`. |
 | "Unable to complete login" after switching to Workbench | PHP cannot log in to MySQL80. Put the right root password in `config\database.local.php` (Change 7, Step 2), and check MySQL80 is running in `services.msc`. |
 | phpMyAdmin: `#1050 - Table ... already exists` | You already ran this change. Nothing to do. |
 | phpMyAdmin: `#1046 - No database selected` | Add `USE maldetect_db;` as the first line, or click **maldetect_db** on the left before the **SQL** tab. |
