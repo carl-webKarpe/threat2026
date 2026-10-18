@@ -249,6 +249,24 @@ SELECT username, email, role FROM users;
 
 ---
 
+### Change 5: Remove the warning popup on monitored PCs
+
+**What changed:** the agent no longer shows a popup on the PC when a download is dangerous. It still reports every download, and admins see the risk, threat name and engine results on **Device Detections** and the dashboard. The agent only writes a line to its own log.
+
+**SQL to run:** none.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Update the agent on each monitored PC.**
+
+1. Stop the agent: press **Ctrl+C** in its window, or end `python.exe`/`pythonw.exe` in Task Manager.
+2. Copy the new `agent\maldetect_agent.py` over the old one. Keep that PC's `config.json` and `agent_state.json`.
+3. Start it again: `python maldetect_agent.py`.
+
+**Step 3: Test.** Download a test file on that PC. No popup appears, and the file shows up in **Device Detections** on the server.
+
+---
+
 ## Part 4: Set up download detection on another PC
 
 ### On the server PC (the one with XAMPP)

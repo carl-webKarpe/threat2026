@@ -2,7 +2,7 @@
 
 Runs on a PC or laptop, watches the Downloads folder, and reports every finished download
 (file name, SHA-256, size, and on Windows the source URL) to the MalDetect server, which checks
-it with VirusTotal. Shows a warning when a download is malicious or suspicious.
+it with VirusTotal. Results are shown to administrators on the MalDetect server; nothing is shown on this PC.
 
 Uses only the Python standard library (Python 3.9+). Usage:
 
@@ -22,7 +22,6 @@ import platform
 import socket
 import ssl
 import sys
-import threading
 import time
 import urllib.error
 import urllib.request
@@ -115,17 +114,6 @@ def read_zone_identifier(path: Path) -> tuple[str | None, str | None]:
         return values.get("HostUrl"), values.get("ReferrerUrl")
     except OSError:
         return None, None
-
-
-def alert(title: str, message: str) -> None:
-    log.warning("%s: %s", title, message)
-    if os.name == "nt":
-        import ctypes
-
-        # MB_ICONWARNING | MB_SYSTEMMODAL, shown in a thread so the agent keeps watching.
-        threading.Thread(
-            target=lambda: ctypes.windll.user32.MessageBoxW(0, message, title, 0x30 | 0x1000), daemon=True
-        ).start()
 
 
 def default_watch_dirs() -> list[Path]:
@@ -247,11 +235,10 @@ class Agent:
     def handle_detection(self, detection: dict, path: Path | None) -> None:
         detection_id = str(detection["id"])
         if detection.get("is_threat"):
-            alert(
-                "MalDetect: dangerous download",
-                f"{detection['file_name']}\n\nRisk: {detection.get('risk_level')}\nThreat: {detection.get('threat_name') or 'not named'}\n"
-                f"Engines: {detection.get('malicious_count')} malicious, {detection.get('suspicious_count')} suspicious.\n\n"
-                "Do not open this file. Your administrator has been notified.",
+            # Threats are only logged here; administrators see them on the server.
+            log.warning(
+                "Threat detected: %s (%s, %s)",
+                detection["file_name"], detection.get("risk_level"), detection.get("threat_name") or "unnamed",
             )
             self.state["pending"].pop(detection_id, None)
             return
