@@ -47,7 +47,7 @@ In the agent config, `server_url` must be the address the monitored PC uses to r
 http://192.168.1.87/threat2026
 ```
 
-Find the server's IP with `ipconfig` (look for **IPv4 Address**). Use `https://` instead if you set up HTTPS (SETUP-GUIDE.md, Change 15).
+Find the server's IP with `ipconfig` (look for **IPv4 Address**), or run `tools\check_network.ps1`. When the server moves to another network (other Wi-Fi, LAN cable, hotspot) its IP changes: see [NETWORK-GUIDE.md](NETWORK-GUIDE.md). Use `https://` instead if you set up HTTPS (SETUP-GUIDE.md, Change 15).
 
 **Result:** the new device is in the list with **○ Offline** and *Agent not connected yet*. That is normal until the agent runs on the PC (Part 2).
 
@@ -199,4 +199,5 @@ All on the **Devices** page:
 | Agent says `Config file not found` | Run it from the folder that contains `config.json`, or create `config.json` from `config.example.json`. |
 | `CERTIFICATE_VERIFY_FAILED` | The agent needs `maldetect-ca.crt` for HTTPS (SETUP-GUIDE.md, Change 15). |
 | Two rows show the same computer name | Two device entries use the same PC. Each PC needs its **own** device and token. Delete the extra entry. |
+| The server's IP changed (new Wi-Fi, LAN cable, hotspot, restart) | Follow [NETWORK-GUIDE.md](NETWORK-GUIDE.md), Part 2. On installed PCs one command is enough: `C:\MalDetectAgent\change_server.ps1 -ServerUrl http://<new IP>/threat2026`. |
 | Results stay **Pending** | VirusTotal checks about 4 unknown files per minute with the free key. Wait a few minutes; check that the VirusTotal key is set (SETUP-GUIDE.md, Part 4). |

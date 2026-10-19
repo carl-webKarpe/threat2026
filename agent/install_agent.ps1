@@ -83,7 +83,7 @@ New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 $sameFolder = (Resolve-Path $SourceDir).Path.TrimEnd('\') -ieq (Resolve-Path $InstallDir).Path.TrimEnd('\')
 if (-not $sameFolder) {
     if ($mode -eq 'exe') { Copy-Item $exe $InstallDir -Force } else { Copy-Item $script $InstallDir -Force }
-    foreach ($extra in 'config.example.json', 'uninstall_agent.ps1') {
+    foreach ($extra in 'config.example.json', 'uninstall_agent.ps1', 'change_server.ps1') {
         if (Test-Path (Join-Path $SourceDir $extra)) { Copy-Item (Join-Path $SourceDir $extra) $InstallDir -Force }
     }
 }

@@ -627,6 +627,27 @@ It creates a private **MalDetect Local CA** and a certificate for the IP, points
 
 **Step 2: Test.** On **Devices**, click **Rename** on `mainDevice`, type for example `Laptop 1 (Server)` and click **OK**. A green message confirms it, and the device stays **● Online**.
 
+### Change 17: Network guide and IP-change helpers
+
+**What changed:**
+
+- New **[NETWORK-GUIDE.md](NETWORK-GUIDE.md)**: how to find the server's IP with `ipconfig`, what to change when the server moves to another network (Wi-Fi, LAN cable, hotspot), how to give the server a fixed IP, and notes per connection type.
+- `tools\check_network.ps1` (server): shows the current IP of each connection, checks Private/Public, the firewall rule and Apache, and prints the command to give the PCs.
+- `agent\change_server.ps1` (monitored PC): points an installed agent to a new server IP and restarts it, keeping its token. `build_exe.bat` and `install_agent.ps1` now include it.
+
+**SQL to run:** none.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Rebuild the agent package** so `dist` contains `change_server.ps1`: run `agent\build_exe.bat` again. Agents already installed can get it by running `install_agent.ps1` again, or by copying `agent\change_server.ps1` into `C:\MalDetectAgent`.
+
+**Step 3: Try the check.** On the server:
+
+```powershell
+cd C:\xampp1\htdocs\threat2026
+powershell -ExecutionPolicy Bypass -File .\tools\check_network.ps1
+```
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)
