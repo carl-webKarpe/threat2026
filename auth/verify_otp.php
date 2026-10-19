@@ -236,6 +236,18 @@ try {
         $otpRecord['id']
     ]);
 
+    /*
+     * Another request already consumed this code.
+     */
+    if ($markUsed->rowCount() !== 1) {
+
+        $_SESSION['otp_error'] =
+            'Invalid or expired verification code.';
+
+        header('Location: ../superadmin/otp.php');
+        exit;
+    }
+
 
     /*
      * Retrieve Superadmin information.

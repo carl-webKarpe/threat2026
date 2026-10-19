@@ -252,6 +252,6 @@ scanner_json_response([
         'size' => scanner_format_size($fileSize),
         'mime_type' => $mimeType,
         'sha256' => $hash,
-        'status' => 'scanning',
+        'status' => $existingReport !== null ? 'completed' : 'scanning',
     ],
 ]);
