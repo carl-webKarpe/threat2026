@@ -64,8 +64,21 @@ $serverExt = Join-Path $certDir 'server.ext'
 
 function Invoke-OpenSsl([string[]]$Arguments) {
     $env:OPENSSL_CONF = $reqConf
-    & $openssl @Arguments 2>&1 | ForEach-Object { Write-Verbose "$_" }
-    if ($LASTEXITCODE -ne 0) { throw "openssl failed: $($Arguments -join ' ')" }
+    # OpenSSL prints normal progress (for example "Certificate request self-signature ok") on stderr.
+    # Windows PowerShell 5.1 turns stderr lines into errors, which would stop this script, so only the
+    # exit code decides whether OpenSSL failed.
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $output = & $openssl @Arguments 2>&1 | ForEach-Object { "$_" }
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousPreference
+    }
+    $output | ForEach-Object { Write-Verbose $_ }
+    if ($exitCode -ne 0) {
+        throw "openssl failed: $($Arguments -join ' ')`n$($output -join [Environment]::NewLine)"
+    }
 }
 
 # Minimal OpenSSL settings (XAMPP's default openssl.cnf path often does not exist).
@@ -74,6 +87,10 @@ Set-Content -Path $reqConf -Encoding ASCII -Value @(
 )
 
 # --- 1. The CA (created once, reused afterwards) -----------------------------------------------------
+if ((Test-Path $caKey) -and -not (Test-Path $caCrt)) {
+    # An earlier run stopped half-way; start the CA again.
+    Remove-Item $caKey -Force
+}
 if ((Test-Path $caKey) -and (Test-Path $caCrt)) {
     Write-Step "Using the existing MalDetect Local CA in $certDir"
 } else {
