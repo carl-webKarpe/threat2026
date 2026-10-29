@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/database.php';
 
+// Every page includes this file: tell browsers not to show MalDetect inside other sites' frames (clickjacking),
+// not to guess file types, and not to send full page addresses to other sites.
+if (PHP_SAPI !== 'cli' && !headers_sent()) {
+    header('X-Frame-Options: SAMEORIGIN');
+    header('X-Content-Type-Options: nosniff');
+    header('Referrer-Policy: same-origin');
+}
+
 function start_secure_session(): void
 {
     if (session_status() === PHP_SESSION_NONE) {

@@ -43,8 +43,9 @@ function scanner_upload_directory(): string
         $configuredPath = rtrim($configuredDirectory, "\\/");
         if ($documentRoot !== false) {
             $documentRoot = rtrim($documentRoot, "\\/");
-            $normalizedPath = str_replace('/', DIRECTORY_SEPARATOR, $configuredPath);
-            $normalizedRoot = str_replace('/', DIRECTORY_SEPARATOR, $documentRoot);
+            // Compare whole folder names: C:\xampp\htdocs-uploads is outside C:\xampp\htdocs.
+            $normalizedPath = str_replace('/', DIRECTORY_SEPARATOR, $configuredPath) . DIRECTORY_SEPARATOR;
+            $normalizedRoot = str_replace('/', DIRECTORY_SEPARATOR, $documentRoot) . DIRECTORY_SEPARATOR;
             if (strncasecmp($normalizedPath, $normalizedRoot, strlen($normalizedRoot)) === 0) {
                 throw new RuntimeException('Upload storage must be outside the web document root.');
             }

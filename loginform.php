@@ -10,7 +10,12 @@ session_start([
 ]);
 
 $error = $_SESSION['login_error'] ?? '';
-$username = $_SESSION['login_username'] ?? '';
+// After a failed login the username stays filled in; with "Remember my username" it is also kept in a cookie.
+$rememberedUsername = (string) ($_COOKIE['maldetect_username'] ?? '');
+if (!preg_match('/^[A-Za-z0-9._-]{1,100}$/', $rememberedUsername)) {
+    $rememberedUsername = '';
+}
+$username = (string) ($_SESSION['login_username'] ?? $rememberedUsername);
 unset($_SESSION['login_error'], $_SESSION['login_username']);
 require_once __DIR__ . '/auth/csrf.php';
 $loginCsrfToken = csrf_token();
@@ -53,7 +58,7 @@ $loginCsrfToken = csrf_token();
                 <div class="relative z-10 max-w-xl enter"><p class="mb-5 font-mono text-xs tracking-[.24em] text-emerald-300">INTELLIGENT THREAT ANALYSIS</p><h1 class="text-5xl font-extrabold leading-[1.06] tracking-tight xl:text-6xl">Protect.<br><span class="text-electric">Detect.</span><br>Secure.</h1><p class="mt-7 max-w-md text-base leading-8 text-cloud">Detect threats before they become a problem with a clear, intelligent security layer for your digital environment.</p><div class="relative mt-14 h-36 max-w-md" aria-hidden="true"><div class="absolute left-0 right-5 top-1/2 border-t border-dashed border-electric/30"></div><div class="absolute left-[16%] top-[22%] h-20 w-20 rounded-full border border-electric/20"></div><div class="absolute left-[43%] top-[8%] h-28 w-28 rounded-full border border-emerald-300/20"></div><div class="absolute right-[8%] top-[28%] h-14 w-14 rounded-full border border-electric/20"></div><div class="node absolute left-[16%] top-[48%] h-3 w-3 rounded-full bg-electric shadow-[0_0_18px_#b9a3ff]"></div><div class="node absolute left-[48%] top-[15%] h-3 w-3 rounded-full bg-emerald-300 shadow-[0_0_18px_#6ee7b7]"></div><div class="node absolute right-[10%] top-[48%] h-3 w-3 rounded-full bg-electric shadow-[0_0_18px_#b9a3ff]"></div><div class="absolute left-[44%] top-[35%] grid h-16 w-16 place-items-center rounded-2xl border border-electric/40 bg-electric/10 text-electric shadow-[0_0_40px_rgba(139,92,246,.3)]">◈</div></div></div>
                 <div class="relative z-10 flex items-center justify-between font-mono text-[10px] tracking-[.15em] text-white/45"><span>SECURITY LAYER / 01</span><span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_10px_#6ee7b7]"></span> SYSTEM ONLINE</span></div>
             </section>
-            <section class="relative flex items-center justify-center overflow-hidden px-6 py-12 sm:px-12 lg:px-14 xl:px-20"><div class="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-violet-500/10 blur-3xl"></div><div class="relative z-10 w-full max-w-md enter enter-delay"><div class="mb-10 lg:hidden"><a href="/" class="inline-flex items-center gap-3 font-mono text-sm tracking-[.2em]">MAL<span class="text-electric">DETECT</span></a></div><p class="font-mono text-[10px] tracking-[.24em] text-electric">SECURE AUTHENTICATION</p><h2 class="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Welcome Back</h2><p class="mt-3 text-sm text-cloud">Sign in to MalDetect to continue your security work.</p><?php if ($error !== ''): ?><div class="mt-7 rounded-xl border border-red-300/25 bg-red-400/10 px-4 py-3 text-sm text-red-100" role="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?><form class="mt-8" method="post" action="auth/login_process.php"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars($loginCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
+            <section class="relative flex items-center justify-center overflow-hidden px-6 py-12 sm:px-12 lg:px-14 xl:px-20"><div class="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-violet-500/10 blur-3xl"></div><div class="relative z-10 w-full max-w-md enter enter-delay"><div class="mb-10 lg:hidden"><a href="index.php" class="inline-flex items-center gap-3 font-mono text-sm tracking-[.2em]">MAL<span class="text-electric">DETECT</span></a></div><p class="font-mono text-[10px] tracking-[.24em] text-electric">SECURE AUTHENTICATION</p><h2 class="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Welcome Back</h2><p class="mt-3 text-sm text-cloud">Sign in to MalDetect to continue your security work.</p><?php if ($error !== ''): ?><div class="mt-7 rounded-xl border border-red-300/25 bg-red-400/10 px-4 py-3 text-sm text-red-100" role="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?><form class="mt-8" method="post" action="auth/login_process.php"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars($loginCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
 <label class="block text-xs font-semibold text-cloud" for="username">Username</label>
 <div class="relative mt-2">
     <span class="absolute left-4 top-1/2 -translate-y-1/2 text-electric/60">@</span>
@@ -69,7 +74,7 @@ $loginCsrfToken = csrf_token();
     <button class="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-cloud transition hover:bg-white/10 hover:text-white" type="button" data-toggle-password aria-label="Show password">◉</button>
 </div>
 <label class="mt-5 flex items-center gap-3 text-xs text-cloud">
-    <input class="h-4 w-4 rounded border-white/20 bg-night text-violet-500 focus:ring-violet-500" type="checkbox" name="remember" value="1"> Remember this device
+    <input class="h-4 w-4 rounded border-white/20 bg-night text-violet-500 focus:ring-violet-500" type="checkbox" name="remember" value="1"<?= $rememberedUsername !== '' ? ' checked' : '' ?>> Remember my username
 </label>
 <button class="mt-7 flex w-full items-center justify-center gap-3 rounded-xl bg-electric px-5 py-3.5 text-sm font-bold text-night transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_0_30px_rgba(185,163,255,.25)] focus:outline-none focus:ring-4 focus:ring-violet-500/30" type="submit">Sign in securely <span aria-hidden="true">→</span></button>
 </form>

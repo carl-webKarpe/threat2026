@@ -47,9 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         superadmin_audit('Account Updated', $id, 'Account details updated.');
         superadmin_redirect($submitted['role'] === 'admin' ? 'admins.php' : 'users.php', 'Account updated successfully.');
     } catch (PDOException $exception) {
-        $error = (int) $exception->errorInfo[1] === 1062 ? 'Username already exists.' : 'The account could not be updated.';
-        if ($error !== 'Username already exists.') {
+        $error = superadmin_duplicate_message($exception);
+        if ($error === null) {
             error_log($exception->getMessage());
+            $error = 'The account could not be updated.';
         }
     } catch (InvalidArgumentException $exception) {
         $error = $exception->getMessage();

@@ -44,7 +44,12 @@ if (!virustotal_reserve_request($pdo)) {
     agent_json_response(['success' => false, 'message' => 'VirusTotal request limit reached. Try again later.', 'retryable' => true], 429);
 }
 
-$uploadDirectory = scanner_upload_directory();
+try {
+    $uploadDirectory = scanner_upload_directory();
+} catch (RuntimeException $exception) {
+    error_log('Upload storage misconfigured: ' . $exception->getMessage());
+    agent_json_response(['success' => false, 'message' => 'The server upload storage is not configured correctly (MALDETECT_UPLOAD_DIR).'], 500);
+}
 $storedPath = $uploadDirectory . DIRECTORY_SEPARATOR . bin2hex(random_bytes(32)) . '.bin';
 try {
     if (!is_dir($uploadDirectory)) {

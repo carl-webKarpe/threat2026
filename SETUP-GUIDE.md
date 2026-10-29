@@ -648,6 +648,23 @@ cd C:\xampp1\htdocs\threat2026
 powershell -ExecutionPolicy Bypass -File .\tools\check_network.ps1
 ```
 
+### Change 18: Maintenance audit fixes (security and bug fixes)
+
+**What changed** (no new features, nothing to configure):
+
+- **Private files are no longer downloadable** from the network: `agent\config.json` (it holds a device token), `agent_state.json` and `agent.log`, the `.git` folder (the whole source history), `database\*.sql`, `vendor\`, `includes\` and the Composer files. New `.htaccess` files in `agent\`, `database\` and `includes\`, and rules in the main `.htaccess`.
+- **Security headers** on every page: MalDetect can no longer be shown inside another website's frame (clickjacking).
+- **Time zones:** MySQL now uses PHP's time zone on every connection. Before, when PHP ran in UTC and MySQL in local time, pending VirusTotal checks were never retried and report dates were shifted.
+- **Uploads:** an upload folder whose name merely starts like the web root (for example `C:\xampp1\htdocs-uploads`) is no longer refused, and a wrong `MALDETECT_UPLOAD_DIR` now gives a clear message instead of a crash.
+- **Accounts:** adding or editing an account with an email that is already used now says so (it used to say *"Username already exists."*).
+- **Login page:** after a wrong password the username stays filled in; the checkbox is now **Remember my username** and really remembers it (only the username, never the password); the MalDetect logo on small screens links to MalDetect instead of the XAMPP start page.
+
+**SQL to run:** none.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Test.** Open `http://<server IP>/threat2026/agent/config.json` from another PC: it must say **Forbidden**. Sign in with a wrong password: the username stays filled in.
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)

@@ -15,7 +15,7 @@ function database_connection(): PDO
     $username = getenv('MALDETECT_DB_USER') ?: ($local['username'] ?? 'root');
     $password = getenv('MALDETECT_DB_PASSWORD') ?: (string) ($local['password'] ?? '');
 
-    return new PDO(
+    $pdo = new PDO(
         "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
         $username,
         $password,
@@ -25,4 +25,11 @@ function database_connection(): PDO
             PDO::ATTR_EMULATE_PREPARES => false,
         ],
     );
+
+    // Use PHP's time zone for this connection, so NOW(), CURRENT_TIMESTAMP and TIMESTAMP columns agree with
+    // PHP's time() and date(). Otherwise, when MySQL runs in local time and PHP in UTC (php.ini without
+    // date.timezone), time comparisons in PHP are off by hours and, for example, VirusTotal re-checks never run.
+    $pdo->exec('SET time_zone = ' . $pdo->quote((new DateTimeImmutable())->format('P')));
+
+    return $pdo;
 }

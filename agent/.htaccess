@@ -1,0 +1,2 @@
+# Not web pages: these files are used on the server or copied to PCs, never downloaded.
+Require all denied

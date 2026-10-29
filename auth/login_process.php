@@ -10,6 +10,19 @@ require_once __DIR__ . '/otp_rate_limit.php';
 
 start_secure_session();
 
+/** Keeps the username (never the password) for 30 days when "Remember my username" is ticked; otherwise forgets it. */
+function remember_login_username(?string $username): void
+{
+    $path = rtrim(str_replace('\\', '/', dirname((string) ($_SERVER['SCRIPT_NAME'] ?? '/'), 2)), '/') . '/';
+    setcookie('maldetect_username', $username ?? '', [
+        'expires' => $username === null ? time() - 3600 : time() + 30 * 24 * 3600,
+        'path' => $path,
+        'secure' => !empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off',
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../login.php');
     exit;
@@ -32,6 +45,9 @@ unset(
 
 $username = trim($_POST['username'] ?? '');
 $password = $_POST['password'] ?? '';
+
+// Shown again in the form if this login fails.
+$_SESSION['login_username'] = mb_substr($username, 0, 100);
 
 if ($username === '' || $password === '') {
     $_SESSION['login_error'] = 'Please enter your username and password.';
@@ -88,6 +104,7 @@ try {
     }
 
     clear_login_attempts($pdo, $ipAddress, $username);
+    remember_login_username(($_POST['remember'] ?? '') === '1' ? (string) $user['username'] : null);
 
     /*
      * Check account status.

@@ -72,6 +72,20 @@ function superadmin_validate_account(array $input, bool $passwordRequired = fals
     ];
 }
 
+/**
+ * Message for a duplicate username or email (MySQL error 1062), or null for any other database error.
+ * MySQL names the unique key: "for key 'email'" (MariaDB) or "for key 'users.email'" (MySQL 8).
+ */
+function superadmin_duplicate_message(PDOException $exception): ?string
+{
+    if ((int) ($exception->errorInfo[1] ?? 0) !== 1062) {
+        return null;
+    }
+    return preg_match("/for key '(?:users\\.)?email'/i", (string) ($exception->errorInfo[2] ?? ''))
+        ? 'That email address is already used by another account.'
+        : 'Username already exists.';
+}
+
 function superadmin_audit(string $action, ?int $targetUserId = null, string $details = ''): void
 {
     try {

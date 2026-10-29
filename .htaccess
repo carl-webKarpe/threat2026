@@ -3,3 +3,15 @@ Options -Indexes
 <Files "TEMPORARY-LOGIN-CREDENTIALS.txt">
     Require all denied
 </Files>
+
+# Hidden files and folders (.git, .env, .vscode, ...) are never served: .git would reveal the whole source history.
+RedirectMatch 404 "/\.(?!well-known/)"
+
+# Composer files and the libraries it installs are not web pages.
+<FilesMatch "^composer\.(json|lock)$">
+    Require all denied
+</FilesMatch>
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^vendor(/|$) - [F,L]
+</IfModule>

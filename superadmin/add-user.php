@@ -25,9 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         superadmin_audit('Account Created', $targetId, 'Created ' . $account['role'] . ' account.');
         superadmin_redirect($account['role'] === 'admin' ? 'admins.php' : 'users.php', 'Account created successfully.');
     } catch (PDOException $exception) {
-        if ((int) $exception->errorInfo[1] === 1062) {
-            $error = 'Username already exists.';
-        } else {
+        $error = superadmin_duplicate_message($exception);
+        if ($error === null) {
             error_log($exception->getMessage());
             $error = 'The account could not be created.';
         }

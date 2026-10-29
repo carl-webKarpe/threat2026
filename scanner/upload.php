@@ -129,7 +129,12 @@ try {
 }
 
 $storedFilename = bin2hex(random_bytes(32)) . '.' . $extension;
-$uploadDirectory = scanner_upload_directory();
+try {
+    $uploadDirectory = scanner_upload_directory();
+} catch (RuntimeException $exception) {
+    error_log('Upload storage misconfigured: ' . $exception->getMessage());
+    scanner_json_response(['success' => false, 'message' => 'The upload storage is not configured correctly. Ask the administrator to check MALDETECT_UPLOAD_DIR.'], 500);
+}
 $storedPath = $uploadDirectory . DIRECTORY_SEPARATOR . $storedFilename;
 $createdDirectory = false;
 
