@@ -78,6 +78,77 @@ function virustotal_reserve_request(PDO $pdo): bool
     }
 }
 
+/** File activity event types an agent may send. */
+const AGENT_ACTIVITY_EVENT_TYPES = [
+    'FILE_CREATED', 'FILE_MODIFIED', 'FILE_DELETED', 'FILE_RENAMED', 'FILE_MOVED',
+    'FOLDER_CREATED', 'FOLDER_DELETED', 'FOLDER_RENAMED', 'FOLDER_MOVED',
+];
+
+/** Where an event came from: seen live, or found later by comparing the folder with the saved file list. */
+const AGENT_ACTIVITY_SOURCES = ['realtime', 'reconciliation'];
+
+/** Most file activity events one device may send per hour (a protection, far above normal use). */
+const AGENT_MAX_ACTIVITY_EVENTS_PER_HOUR = 20000;
+
+/** Most extra folders an admin can add for one device. */
+const AGENT_MAX_EXTRA_FOLDERS = 20;
+
+/**
+ * Converts an ISO 8601 time from the agent (for example 2026-10-29T13:14:15.123Z or with +08:00) into a UTC
+ * "Y-m-d H:i:s.v" string for a DATETIME(3) column, or null when it is missing or not a valid time.
+ */
+function agent_parse_utc_time(mixed $value): ?string
+{
+    if (!is_string($value) || $value === '' || strlen($value) > 40) {
+        return null;
+    }
+    try {
+        $time = new DateTimeImmutable($value);
+    } catch (Exception) {
+        return null;
+    }
+    // Only accept times that name their zone, so a time is never silently read in the server's zone.
+    if (!preg_match('/(Z|[+-]\d{2}:?\d{2})$/i', $value)) {
+        return null;
+    }
+
+    return $time->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s.v');
+}
+
+/** Lower-case extension of a file name without the dot ("docx"), or null. */
+function agent_file_extension(?string $name): ?string
+{
+    if ($name === null) {
+        return null;
+    }
+    $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+
+    return $extension === '' ? null : mb_substr($extension, 0, 32);
+}
+
+/**
+ * Extra folders an admin set for a device, one per line. Only absolute Windows paths (C:\..., \\server\share\...)
+ * or absolute paths (/home/...) are kept; the agent checks again that each folder exists.
+ *
+ * @return list<string>
+ */
+function agent_parse_extra_folders(?string $text): array
+{
+    $folders = [];
+    foreach (preg_split('/\r\n|\r|\n/', (string) $text) ?: [] as $line) {
+        $folder = trim($line);
+        if ($folder === '' || mb_strlen($folder) > 260 || preg_match('/[\x00-\x1F]/', $folder)) {
+            continue;
+        }
+        if (!preg_match('#^([A-Za-z]:[\\\\/]|\\\\\\\\|/)#', $folder)) {
+            continue;
+        }
+        $folders[] = $folder;
+    }
+
+    return array_slice(array_values(array_unique($folders)), 0, AGENT_MAX_EXTRA_FOLDERS);
+}
+
 /** SQL condition that is true for online devices. $table is the devices table name or alias. */
 function agent_online_sql(string $table = 'devices'): string
 {

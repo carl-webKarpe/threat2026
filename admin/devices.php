@@ -124,6 +124,30 @@ try {
     $error = $error ?: 'Devices are unavailable. Run the latest database migrations (see SETUP-GUIDE.md).';
 }
 
+// File activity per device, for the "File Activity" column. Needs the Phase 13 table and columns.
+$activity = [];
+try {
+    $rows = $pdo->query(
+        'SELECT devices.id, devices.activity_status,
+                (SELECT COUNT(*) FROM file_activity_events WHERE device_id = devices.id) AS event_count
+         FROM devices'
+    )->fetchAll();
+    foreach ($rows as $row) {
+        $status = json_decode((string) ($row['activity_status'] ?? ''), true);
+        $folders = is_array($status) ? ($status['folders'] ?? []) : [];
+        $problems = count(array_filter($folders, static fn (array $folder): bool => !in_array($folder['status'] ?? '', ['watching', 'polling'], true)));
+        $activity[(int) $row['id']] = [
+            'events' => (int) $row['event_count'],
+            'summary' => is_array($status)
+                ? ($problems ? "{$problems} folder(s) not monitored" : count($folders) . ' folders') . (($status['mode'] ?? '') === 'polling' ? ' · polling' : '')
+                : 'Not reported',
+            'problem' => $problems > 0 || (is_array($status) && ($status['mode'] ?? '') !== 'realtime'),
+        ];
+    }
+} catch (Throwable $exception) {
+    error_log('File activity unavailable: ' . $exception->getMessage());
+}
+
 // Latest command per device, for the "Last Scan" column. Needs the Phase 10 tables.
 $lastCommands = [];
 $commandsAvailable = true;
@@ -196,8 +220,8 @@ require_once __DIR__ . '/../includes/header.php';
 		<?php endif; ?>
 
 		<div class="mt-8 overflow-x-auto rounded-2xl border border-white/10 bg-white/[.03]" data-live-region="devices">
-			<table class="w-full min-w-[1150px] text-left text-sm">
-				<thead class="border-b border-white/10 text-xs uppercase tracking-wider text-slate-500"><tr><th class="px-5 py-4">Device</th><th class="px-5 py-4">Status</th><th class="px-5 py-4">Last Seen</th><th class="px-5 py-4">Downloads</th><th class="px-5 py-4">Threats</th><th class="px-5 py-4">Last Scan</th><th class="px-5 py-4">Token</th><th class="px-5 py-4">Actions</th></tr></thead>
+			<table class="w-full min-w-[1320px] text-left text-sm">
+				<thead class="border-b border-white/10 text-xs uppercase tracking-wider text-slate-500"><tr><th class="px-5 py-4">Device</th><th class="px-5 py-4">Status</th><th class="px-5 py-4">Last Seen</th><th class="px-5 py-4">Downloads</th><th class="px-5 py-4">Threats</th><th class="px-5 py-4">Last Scan</th><th class="px-5 py-4">File Activity</th><th class="px-5 py-4">Token</th><th class="px-5 py-4">Actions</th></tr></thead>
 				<tbody class="divide-y divide-white/5">
 				<?php foreach ($devices as $device): ?>
 					<tr class="text-slate-300" data-row-id="<?= (int) $device['id'] ?>">
@@ -208,17 +232,19 @@ require_once __DIR__ . '/../includes/header.php';
 						<td class="px-5 py-4 <?= (int) $device['threat_count'] > 0 ? 'font-bold text-red-300' : 'text-slate-500' ?>"><?= (int) $device['threat_count'] ?></td>
 						<?php [$scanLabel, $scanClass, $scanDetail] = $scanStatus($lastCommands[(int) $device['id']] ?? null); ?>
 						<td class="whitespace-nowrap px-5 py-4"><span class="<?= $scanClass ?>"><?= $h($scanLabel) ?></span><p class="max-w-[200px] truncate text-xs text-slate-600" title="<?= $h($scanDetail) ?>"><?= $h($scanDetail) ?></p></td>
+						<?php $deviceActivity = $activity[(int) $device['id']] ?? null; ?>
+						<td class="px-5 py-4"><?php if ($deviceActivity === null): ?><span class="text-xs text-slate-600">Run phase13 migration</span><?php else: ?><a class="whitespace-nowrap text-violet-300 hover:text-white" href="activity.php?device=<?= (int) $device['id'] ?>"><?= $deviceActivity['events'] ?> events</a><p class="max-w-[150px] text-xs <?= $deviceActivity['problem'] ? 'text-amber-200' : 'text-slate-600' ?>"><?= $h($deviceActivity['summary']) ?></p><?php endif; ?></td>
 						<td class="px-5 py-4 font-mono text-xs text-slate-500">mdt_<?= $h($device['token_prefix']) ?>…</td>
 						<td class="px-5 py-4"><div class="flex flex-wrap gap-3">
 							<?php if ($commandsAvailable && (int) $device['is_active']): ?><form method="post"><input type="hidden" name="csrf_token" value="<?= $h(csrf_token()) ?>"><input type="hidden" name="id" value="<?= (int) $device['id'] ?>"><input type="hidden" name="action" value="scan"><button class="font-semibold text-emerald-300 hover:text-white">Scan Downloads</button></form><?php endif; ?>
 							<form method="post"><input type="hidden" name="csrf_token" value="<?= $h(csrf_token()) ?>"><input type="hidden" name="id" value="<?= (int) $device['id'] ?>"><input type="hidden" name="action" value="toggle"><button class="<?= (int) $device['is_active'] ? 'text-red-200' : 'text-emerald-200' ?>"><?= (int) $device['is_active'] ? 'Disable' : 'Enable' ?></button></form>
 							<form method="post" onsubmit="return confirm('Create a new token? The old token stops working immediately.')"><input type="hidden" name="csrf_token" value="<?= $h(csrf_token()) ?>"><input type="hidden" name="id" value="<?= (int) $device['id'] ?>"><input type="hidden" name="action" value="rotate"><button class="text-violet-300 hover:text-white">New token</button></form>
 							<form method="post" data-device-name="<?= $h($device['name']) ?>" onsubmit="const name = window.prompt('New name for ' + this.dataset.deviceName + ':', this.dataset.deviceName); if (name === null || name.trim() === '' || name.trim() === this.dataset.deviceName) return false; this.elements.new_name.value = name.trim(); return true;"><input type="hidden" name="csrf_token" value="<?= $h(csrf_token()) ?>"><input type="hidden" name="id" value="<?= (int) $device['id'] ?>"><input type="hidden" name="action" value="rename"><input type="hidden" name="new_name" value=""><button class="text-sky-300 hover:text-white">Rename</button></form>
-							<form method="post" onsubmit="return confirm(<?= $h(json_encode('Delete ' . $device['name'] . '? This also deletes its ' . (int) $device['detection_count'] . ' detection(s) and scan history. This cannot be undone.')) ?>)"><input type="hidden" name="csrf_token" value="<?= $h(csrf_token()) ?>"><input type="hidden" name="id" value="<?= (int) $device['id'] ?>"><input type="hidden" name="action" value="delete"><button class="text-red-300 hover:text-red-100">Delete</button></form>
+							<form method="post" onsubmit="return confirm(<?= $h(json_encode('Delete ' . $device['name'] . '? This also deletes its ' . (int) $device['detection_count'] . ' detection(s), scan history and file activity. This cannot be undone.')) ?>)"><input type="hidden" name="csrf_token" value="<?= $h(csrf_token()) ?>"><input type="hidden" name="id" value="<?= (int) $device['id'] ?>"><input type="hidden" name="action" value="delete"><button class="text-red-300 hover:text-red-100">Delete</button></form>
 						</div></td>
 					</tr>
 				<?php endforeach; ?>
-				<?php if (!$devices): ?><tr><td colspan="8" class="px-5 py-12 text-center text-slate-500">No devices registered yet.</td></tr><?php endif; ?>
+				<?php if (!$devices): ?><tr><td colspan="9" class="px-5 py-12 text-center text-slate-500">No devices registered yet.</td></tr><?php endif; ?>
 				</tbody>
 			</table>
 		</div>

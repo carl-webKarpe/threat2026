@@ -8,6 +8,7 @@ $links = [
     'history' => ['Scan History', 'history.php'],
     'devices' => ['Devices', 'devices.php'],
     'detections' => ['Device Detections', 'detections.php'],
+    'activity' => ['File Activity', 'activity.php'],
     'reports' => ['Reports', 'reports.php'],
     'users' => ['Users', 'users.php'],
 ];

@@ -19,6 +19,9 @@
 # Agent secrets and local state (each PC has its own)
 /agent/config.json
 /agent/agent_state.json
+/agent/activity_inventory_*.json
+/agent/activity_queue_*.jsonl
+/agent/activity_*.tmp
 __pycache__/
 
 # Agent build output and per-PC files

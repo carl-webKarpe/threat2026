@@ -665,6 +665,129 @@ powershell -ExecutionPolicy Bypass -File .\tools\check_network.ps1
 
 **Step 2: Test.** Open `http://<server IP>/threat2026/agent/config.json` from another PC: it must say **Forbidden**. Sign in with a wrong password: the username stays filled in.
 
+### Change 19: File activity monitoring (deleted, renamed, moved, created and modified files)
+
+**What changed:**
+
+- The agent (version **1.4.0**) now also watches the **Desktop, Documents, Downloads, Pictures, Videos and Music** folders of the person logged in to the PC, with all their subfolders. It asks Windows where these folders really are, so folders moved to OneDrive or another drive are found too.
+- It reports, in real time, when a file or folder is **created, modified, deleted, renamed or moved**, for example `FILE_RENAMED | report.docx → final_report.docx | PC-01 | 2026-10-29 13:14:15`. A move between folders (also from Documents to Desktop) is reported as one **FILE_MOVED**, not as a delete plus a new file. For a delete it says whether the file went to the **Recycle Bin** or was deleted permanently (or moved to a folder that is not monitored).
+- Changes made while the agent was off (or that Windows did not report) are found at the next start by comparing the folders with the agent's saved file list. They are marked **Found later**; when the exact time is not known, the page says *Exact time unknown, between … and …* instead of guessing.
+- When the server cannot be reached, the agent keeps the events in a file and sends them later. Each event is stored only once, even when it is sent again.
+- Only names, paths, sizes and times are sent. **File contents are never read or sent.**
+- New page **File Activity** (Admin and Superadmin sidebars) with filters for PC, event type, file name, folder path, date and source. Choose a PC to see which folders it monitors, which ones are missing, and (Admin only) to add **extra folders** for that PC. The Superadmin can only view this page.
+- **Devices** page: new **File Activity** column (number of events, and a warning when a folder cannot be monitored).
+- The installer (`MalDetectAgent.exe`) includes everything. Without the `.exe` (Way B, Python), the agent needs `file_activity.py` next to `maldetect_agent.py` and the **watchdog** package; without watchdog it still works, but checks the folders every 30 seconds instead of in real time.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Run this SQL in Workbench** (same as `database/migrations/phase13_file_activity.sql`; you can also open that file with **File > Open SQL Script**). Run it with **Ctrl+Shift+Enter**:
+
+```sql
+USE maldetect_db;
+
+-- Phase 13: real-time file activity monitoring (created, modified, deleted, renamed, moved files).
+-- Safe to run more than once.
+
+CREATE TABLE IF NOT EXISTS file_activity_events (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    device_id INT UNSIGNED NOT NULL,
+    -- Made by the agent; with UNIQUE(device_id, event_uuid) a retried upload never creates a second row.
+    event_uuid CHAR(36) NOT NULL,
+    -- FILE_CREATED, FILE_MODIFIED, FILE_DELETED, FILE_RENAMED, FILE_MOVED and the FOLDER_* equivalents.
+    event_type VARCHAR(20) NOT NULL,
+    -- realtime: reported by Windows as it happened; reconciliation: found by comparing the folder with the
+    -- agent's saved file list (for example after the agent was off), so the exact time may be unknown.
+    source VARCHAR(20) NOT NULL DEFAULT 'realtime',
+    is_directory TINYINT(1) NOT NULL DEFAULT 0,
+    folder_label VARCHAR(50) NULL,
+    old_path VARCHAR(1024) NULL,
+    old_name VARCHAR(255) NULL,
+    old_extension VARCHAR(32) NULL,
+    new_path VARCHAR(1024) NULL,
+    new_name VARCHAR(255) NULL,
+    new_extension VARCHAR(32) NULL,
+    file_size BIGINT UNSIGNED NULL,
+    user_account VARCHAR(255) NULL,
+    -- All times are UTC. event_time_utc is NULL when the real time is not known (reconciliation of deletes,
+    -- renames and moves); the change then happened between window_start_utc and detected_at_utc.
+    event_time_utc DATETIME(3) NULL,
+    time_source VARCHAR(30) NULL,
+    detected_at_utc DATETIME(3) NOT NULL,
+    window_start_utc DATETIME(3) NULL,
+    received_at_utc DATETIME(3) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'recorded',
+    details VARCHAR(500) NULL,
+    UNIQUE KEY file_activity_events_uuid_unique (device_id, event_uuid),
+    INDEX file_activity_events_device_time_index (device_id, detected_at_utc),
+    INDEX file_activity_events_type_time_index (event_type, detected_at_utc),
+    INDEX file_activity_events_time_index (detected_at_utc),
+    CONSTRAINT file_activity_events_device_foreign FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Extra folders chosen by an admin for one device (one path per line), sent to the agent in the heartbeat.
+SET @sql := IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'devices' AND COLUMN_NAME = 'activity_folders') = 0,
+    'ALTER TABLE devices ADD COLUMN activity_folders TEXT NULL', 'DO 0');
+PREPARE phase13_stmt FROM @sql; EXECUTE phase13_stmt; DEALLOCATE PREPARE phase13_stmt;
+
+-- The agent's last report of which folders it watches and any folder it cannot watch (JSON).
+SET @sql := IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'devices' AND COLUMN_NAME = 'activity_status') = 0,
+    'ALTER TABLE devices ADD COLUMN activity_status TEXT NULL', 'DO 0');
+PREPARE phase13_stmt FROM @sql; EXECUTE phase13_stmt; DEALLOCATE PREPARE phase13_stmt;
+
+SET @sql := IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'devices' AND COLUMN_NAME = 'activity_status_at') = 0,
+    'ALTER TABLE devices ADD COLUMN activity_status_at TIMESTAMP NULL', 'DO 0');
+PREPARE phase13_stmt FROM @sql; EXECUTE phase13_stmt; DEALLOCATE PREPARE phase13_stmt;
+```
+
+**Step 3: Check it worked:**
+
+```sql
+USE maldetect_db;
+SHOW TABLES LIKE 'file_activity_events';
+SHOW COLUMNS FROM devices LIKE 'activity%';
+```
+
+The first returns one row, the second three rows (`activity_folders`, `activity_status`, `activity_status_at`).
+
+**Step 4: Update the agent** on every monitored PC.
+
+*With the installer (Way A, recommended):* on the server, build the package again, then run the installer again on each PC with the same command as before (it keeps the PC's settings):
+
+```powershell
+cd C:\xampp1\htdocs\threat2026\agent
+.\build_exe.bat
+```
+
+```powershell
+cd E:\dist
+powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://<server IP>/threat2026 -Token mdt_THE_TOKEN_OF_THIS_PC
+```
+
+*With Python (Way B):* stop the agent (**Ctrl+C**), copy the new `agent\maldetect_agent.py` **and** `agent\file_activity.py` into the agent folder (keep `config.json`), then:
+
+```powershell
+py -m pip install watchdog
+py maldetect_agent.py
+```
+
+The first line should say `MalDetect agent 1.4.0`. On the first start the agent saves a list of the files in the monitored folders (`activity_inventory_<user>.json`); it reports changes from then on.
+
+**Step 5: Test.** On the monitored PC:
+
+1. On the server, open **File Activity**, choose the PC in **Device (PC)** and click **Apply Filters**. Under **Monitored folders** the six folders show **Watching** (a folder that does not exist on that PC shows **Unavailable**). Mode must be **Real time**; *Polling* means watchdog is missing (Step 4).
+2. Create a file on the Desktop: **FILE_CREATED** appears within a few seconds.
+3. Rename it: **FILE_RENAMED** with the old and the new name.
+4. Move it into Documents: **FILE_MOVED** with both paths.
+5. Delete it (normal delete): **FILE_DELETED**, *Moved to the Recycle Bin*. Delete another one with **Shift+Delete**: *Not in the Recycle Bin: deleted permanently*.
+6. Stop the agent, rename a file, start the agent again: the rename appears marked **Found later**, with *Exact time unknown*.
+
+**Extra folders:** on **File Activity**, choose the PC, type one full path per line in **Extra folders to monitor on this PC** (for example `D:\Lab\Projects`), and click **Save Folders**. The agent starts watching them within a minute. You can also add folders on the PC itself in `config.json` under `"activity_extra_folders"`, for example `["D:\\Lab\\Projects"]`.
+
+**Settings** in the agent's `config.json` (all optional): `activity_monitoring` (`false` turns it off), `activity_known_folders` (which of the six folders), `activity_extra_folders`, `activity_recursive` (subfolders), `activity_reconcile_minutes` (how often the folders are compared with the saved list, default 15), `activity_ignore_patterns` (more file names to skip, for example `"*.bak"`). Temporary files (`~$*`, `*.tmp`, `*.crdownload`, `desktop.ini`, …) are always skipped.
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)

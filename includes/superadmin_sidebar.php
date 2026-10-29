@@ -7,6 +7,7 @@ $links = [
     'admins' => ['Admins', 'admins.php'],
     'users' => ['Users', 'users.php'],
     'history' => ['Scan History', 'history.php'],
+    'activity' => ['File Activity', 'activity.php'],
     'audit-logs' => ['Audit Logs', 'audit-logs.php'],
 ];
 ?>

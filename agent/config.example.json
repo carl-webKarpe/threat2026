@@ -9,5 +9,19 @@
     "upload_unknown_files": true,
     "report_existing_files": false,
     "verify_tls": true,
-    "ca_file": ""
+    "ca_file": "",
+    "activity_monitoring": true,
+    "activity_known_folders": [
+        "Desktop",
+        "Documents",
+        "Downloads",
+        "Pictures",
+        "Videos",
+        "Music"
+    ],
+    "activity_extra_folders": [],
+    "activity_recursive": true,
+    "activity_reconcile_minutes": 15,
+    "activity_poll_seconds": 30,
+    "activity_ignore_patterns": []
 }

@@ -4,12 +4,13 @@
 
 **Server IP changed, or moving between Wi-Fi, LAN cable and hotspot? Follow [NETWORK-GUIDE.md](NETWORK-GUIDE.md).**
 
-**Using the system? Follow [USER-GUIDE.md](USER-GUIDE.md): register a PC, install the agent, watch downloads, scan, alerts and reports.**
+**Using the system? Follow [USER-GUIDE.md](USER-GUIDE.md): register a PC, install the agent, watch downloads, scan, alerts, reports and file activity.**
 
 MalDetect checks files for malware with the VirusTotal API in two ways:
 
 1. **Upload scanner**: an Admin uploads a file at `admin/scan.php`.
 2. **Endpoint agents**: a small agent runs on other PCs and laptops, watches their Downloads folder, and reports every new download to MalDetect. Admins see the results under **Devices** and **Device Detections**. Nothing is shown on the monitored PC; results appear only on the server. Pages update live, each detection has a details page, and admins get an email when a threat is found. Admins can export reports (CSV / PDF), install the agent on lab PCs with one command (`agent/install_agent.ps1`), and turn on HTTPS for the LAN (`tools/setup_https.ps1`). Step-by-step instructions are in SETUP-GUIDE.md.
+3. **File activity**: the agent also reports files and folders created, modified, deleted (Recycle Bin or permanent), renamed and moved in the Desktop, Documents, Downloads, Pictures, Videos and Music folders of the logged-in user, plus extra folders. Admins and the Superadmin see it on **File Activity**. Only metadata is sent, never file contents.
 
 ## Requirements
 
@@ -17,7 +18,7 @@ MalDetect checks files for malware with the VirusTotal API in two ways:
 - MySQL 8 or MariaDB 10.4+
 - Composer dependencies: `composer install` (PHPMailer, for the Superadmin email OTP)
 - A VirusTotal API key
-- Python 3.9+ on each PC that runs the agent
+- Python 3.9+ on each PC that runs the agent (not needed with `MalDetectAgent.exe`), with the `watchdog` package for real-time file activity (`py -m pip install watchdog`)
 
 ## Database setup (MySQL Workbench)
 
@@ -28,7 +29,7 @@ The database runs on MySQL Server (MySQL80) and is managed with MySQL Workbench.
 1. Make sure the **MySQL80** service is running, and open your connection in **MySQL Workbench**.
 2. Choose **File > Open SQL Script** and pick `database/maldetect_full_install.sql`.
 3. Run it with **Query > Execute All** (Ctrl+Shift+Enter).
-4. Refresh **SCHEMAS**. `maldetect_db` should list `users`, `scans`, `audit_logs`, `login_attempts`, `superadmin_otps`, `superadmin_otp_requests`, `devices` and `device_detections`.
+4. Refresh **SCHEMAS**. `maldetect_db` should list `users`, `scans`, `audit_logs`, `login_attempts`, `superadmin_otps`, `superadmin_otp_requests`, `devices`, `device_detections`, `device_commands` and `file_activity_events` (among others).
 5. If your MySQL root user has a password, copy `config/database.local.example.php` to `config/database.local.php` and put the password in it.
 
 You can run the script again safely. It keeps existing tables and accounts.
@@ -43,6 +44,10 @@ You can run the script again safely. It keeps existing tables and accounts.
 | `phase8_login_attempts.sql` | login and OTP rate limiting |
 | `phase8_superadmin_otps.sql` | Superadmin email OTP |
 | `phase9_devices.sql` | `devices`, `device_detections` (endpoint agents) |
+| `phase10_device_scans.sql` | `device_commands` ("Scan now"), shared VirusTotal limit |
+| `phase11_threat_alerts.sql` | threat alert emails |
+| `phase12_agent_stop.sql` | `devices.agent_stopped_at` (Offline right away) |
+| `phase13_file_activity.sql` | `file_activity_events`, monitored-folder columns on `devices` |
 
 PHP connects with `127.0.0.1:3306`, database `maldetect_db`, user `root` and an empty password by default. If you use other values, set these environment variables: `MALDETECT_DB_HOST`, `MALDETECT_DB_PORT`, `MALDETECT_DB_NAME`, `MALDETECT_DB_USER`, `MALDETECT_DB_PASSWORD`.
 
@@ -125,7 +130,8 @@ Every request sends the header `X-Device-Token: <token>`. Responses are JSON.
 
 | Endpoint | Method | Body | Purpose |
 | --- | --- | --- | --- |
-| `api/agent/heartbeat.php` | POST | `{"hostname", "os", "agent_version"}` | Marks the device online |
+| `api/agent/heartbeat.php` | POST | `{"hostname", "os", "agent_version", "activity"}` | Marks the device online; `activity` is the file monitor's folder status; the response lists the admin's extra folders in `activity.extra_folders` |
+| `api/agent/activity.php` | POST | `{"events": [...]}` (up to 500) | File activity events; each has `event_id` (UUID), `event_type`, `source`, `old_path` / `new_path`, `file_size`, `event_time` (null when unknown), `detected_at`, `window_start`, `details`. Responds with `accepted`, `duplicates` and `rejected` |
 | `api/agent/report.php` | POST | `{"file_name", "sha256", "file_size", "file_path", "source_url", "referrer_url", "downloaded_at"}` | Reports a download; `file_name` and `sha256` are required; `trigger` is `download` or `manual_scan` |
 | `api/agent/result.php?id=N` | GET | — | Latest verdict for a detection |
 | `api/agent/upload.php` | POST multipart | `detection_id`, `file` | Uploads a file VirusTotal does not know |

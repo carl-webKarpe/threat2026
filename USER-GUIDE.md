@@ -1,6 +1,6 @@
 # MalDetect User Guide
 
-How to use MalDetect to watch the downloads of PCs on your network (for example a computer laboratory) and see whether a downloaded file is a threat.
+How to use MalDetect to watch the downloads of PCs on your network (for example a computer laboratory), see whether a downloaded file is a threat, and see which files were created, changed, deleted, renamed or moved on those PCs.
 
 For installing the server and the database, see [SETUP-GUIDE.md](SETUP-GUIDE.md). This guide starts when the website already works.
 
@@ -10,7 +10,7 @@ For installing the server and the database, see [SETUP-GUIDE.md](SETUP-GUIDE.md)
 | --- | --- |
 | **Server** | The PC that runs XAMPP and MySQL (here: Laptop 1, IP `192.168.1.87`). Admins open the website here. |
 | **Monitored PC** | A lab PC or laptop whose downloads are watched (here: Laptop 2). |
-| **Agent** | The small program on each monitored PC. It reports every new download to the server. |
+| **Agent** | The small program on each monitored PC. It reports every new download, and file activity in the user's folders, to the server. |
 | **Device** | A monitored PC as registered on the **Devices** page. |
 | **Token** | The secret key (starts with `mdt_`) that lets one agent talk to the server. One token per device. |
 
@@ -85,7 +85,7 @@ Copy the **whole `dist` folder** to a USB drive. Then on **each** monitored PC:
 ### Way B: run it by hand with Python (for testing)
 
 1. Install Python from <https://www.python.org/downloads/> and tick **Add python.exe to PATH**.
-2. Create `C:\MalDetectAgent` and copy `maldetect_agent.py` and `config.example.json` into it (from the server's `agent` folder).
+2. Create `C:\MalDetectAgent` and copy `maldetect_agent.py`, `file_activity.py` and `config.example.json` into it (from the server's `agent` folder).
 3. In PowerShell:
 
    ```powershell
@@ -94,11 +94,14 @@ Copy the **whole `dist` folder** to a USB drive. Then on **each** monitored PC:
    notepad config.json
    ```
 
-4. Set `server_url` and `device_token`, save, then start it and leave the window open:
+4. Set `server_url` and `device_token`, save, then install watchdog (for real-time file activity), start the agent and leave the window open:
 
    ```powershell
-   python maldetect_agent.py
+   py -m pip install watchdog
+   py maldetect_agent.py
    ```
+
+   (`py` and `python` both work when Python is installed; use the one your PC knows.)
 
 ---
 
@@ -183,9 +186,35 @@ All on the **Devices** page:
 | **Rename** | Changes the device's name only. | Keeps working, nothing to change. |
 | **Disable** / **Enable** | Temporarily blocks / allows the device. History is kept. | Is refused while disabled; works again after Enable. |
 | **New token** | Makes a new token; the old one stops working at once. | Must get the new token (run the installer again, or edit `config.json`). |
-| **Delete** | Removes the device **and all its detections and scan history**. | Is refused for good. |
+| **Delete** | Removes the device **and all its detections, scan history and file activity**. | Is refused for good. |
 
 **Stopping an agent:** with Way B press **Ctrl+C** in its window; with Way A run `C:\MalDetectAgent\uninstall_agent.ps1` as Administrator. The device turns **○ Offline** right away.
+
+---
+
+## Part 10: File activity (deleted, renamed, moved files)
+
+The agent also reports what happens to files in the **Desktop, Documents, Downloads, Pictures, Videos and Music** folders of the person logged in to the PC (and their subfolders, and any extra folders). Only names, paths, sizes and times are recorded; file contents are never read or sent.
+
+1. Click **File Activity** in the sidebar. The list updates by itself (**● Live**).
+2. Each row shows the event, the file, the PC and the times, for example:
+
+   | Event | File | Device | Happened |
+   | --- | --- | --- | --- |
+   | `FILE_RENAMED` | report.docx → final_report.docx | PC-01 | 2026-10-29 13:14:15 |
+   | `FILE_MOVED` | photo.jpg (Desktop → Pictures) | PC-01 | 2026-10-29 13:15:02 |
+   | `FILE_DELETED` | notes.txt · *Moved to the Recycle Bin* | PC-02 | 2026-10-29 13:16:40 |
+
+3. **Event types:** `FILE_CREATED`, `FILE_MODIFIED`, `FILE_DELETED`, `FILE_RENAMED` (new name, same folder), `FILE_MOVED` (other folder), and the same for folders (`FOLDER_…`). A deleted folder also lists the files that were in it.
+4. **Times:** *Happened* is when the change took place on the PC. *Agent* is when the agent noticed it, *Server* when MalDetect received it (they differ when the PC was offline). Times are in the server's time zone; hover a time to see it in UTC.
+5. **Found later:** changes made while the agent was not running are found when it starts again. They are marked **Found later**. When the exact time is not known, the page says *Exact time unknown, between … and …*: the change happened in that window.
+6. **Filters:** choose a **Device (PC)**, an **Event type**, part of a **File name** or of a **Folder path**, a date range, or only **Found later** events, then click **Apply Filters**. **Clear** removes all filters.
+
+**Monitored folders of one PC:** choose the PC in **Device (PC)** and click **Apply Filters**. The box *Monitored folders on …* shows each folder as **Watching**, **Unavailable** (it does not exist, or a USB drive or network share is not connected) or **Error** (no permission). **Mode: Polling** means the PC's agent has no watchdog package, so changes appear up to 30 seconds later (SETUP-GUIDE.md, Change 19).
+
+**Extra folders (Admin):** in the same box, type one full path per line, for example `D:\Lab\Projects` or `\\server\class`, and click **Save Folders**. The agent picks them up within a minute.
+
+The Superadmin can open **File Activity** to review it, but cannot change folders or start scans.
 
 ---
 
@@ -200,4 +229,7 @@ All on the **Devices** page:
 | `CERTIFICATE_VERIFY_FAILED` | The agent needs `maldetect-ca.crt` for HTTPS (SETUP-GUIDE.md, Change 15). |
 | Two rows show the same computer name | Two device entries use the same PC. Each PC needs its **own** device and token. Delete the extra entry. |
 | The server's IP changed (new Wi-Fi, LAN cable, hotspot, restart) | Follow [NETWORK-GUIDE.md](NETWORK-GUIDE.md), Part 2. On installed PCs one command is enough: `C:\MalDetectAgent\change_server.ps1 -ServerUrl http://<new IP>/threat2026`. |
+| **File Activity** shows nothing for a PC | The PC needs agent 1.4.0 (SETUP-GUIDE.md, Change 19). Choose the PC on **File Activity**: if *Monitored folders* says the agent has not reported its folders, the agent is older or not running. |
+| *Mode: Polling* on **File Activity** | The watchdog package is missing on that PC (Python mode). Run `py -m pip install watchdog` there and restart the agent, or use the installer (Way A). |
+| A folder shows **Unavailable** | The folder does not exist for that Windows user, or the drive or network share is not connected. When it comes back, the agent watches it again within a minute and reports what changed meanwhile. |
 | Results stay **Pending** | VirusTotal checks about 4 unknown files per minute with the free key. Wait a few minutes; check that the VirusTotal key is set (SETUP-GUIDE.md, Part 4). |

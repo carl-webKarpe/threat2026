@@ -82,7 +82,15 @@ Write-Step "Copying the agent to $InstallDir"
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 $sameFolder = (Resolve-Path $SourceDir).Path.TrimEnd('\') -ieq (Resolve-Path $InstallDir).Path.TrimEnd('\')
 if (-not $sameFolder) {
-    if ($mode -eq 'exe') { Copy-Item $exe $InstallDir -Force } else { Copy-Item $script $InstallDir -Force }
+    if ($mode -eq 'exe') {
+        Copy-Item $exe $InstallDir -Force
+    } else {
+        Copy-Item $script $InstallDir -Force
+        # File activity monitoring (agent 1.4.0 and newer).
+        $activityScript = Join-Path $SourceDir 'file_activity.py'
+        if (Test-Path $activityScript) { Copy-Item $activityScript $InstallDir -Force }
+        else { Write-Host '    file_activity.py is missing next to maldetect_agent.py: file activity monitoring stays off.' -ForegroundColor Yellow }
+    }
     foreach ($extra in 'config.example.json', 'uninstall_agent.ps1', 'change_server.ps1') {
         if (Test-Path (Join-Path $SourceDir $extra)) { Copy-Item (Join-Path $SourceDir $extra) $InstallDir -Force }
     }
@@ -91,6 +99,17 @@ if ($CaFile) {
     if (-not (Test-Path $CaFile)) { throw "Certificate file not found: $CaFile" }
     $caTarget = Join-Path $InstallDir 'maldetect-ca.crt'
     if ((Resolve-Path $CaFile).Path -ine $caTarget) { Copy-Item $CaFile $caTarget -Force }
+}
+
+# --- Python mode: the watchdog package gives real-time file activity events -----------------------
+if ($mode -eq 'python') {
+    Write-Step 'Installing the watchdog package (real-time file activity monitoring)'
+    $pythonExe = Join-Path (Split-Path $pythonw) 'python.exe'
+    & $pythonExe -m pip install --disable-pip-version-check --quiet watchdog
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host '    Could not install watchdog. The agent still works, but finds file changes every 30 seconds instead of in real time.' -ForegroundColor Yellow
+        Write-Host '    Install it later with:  py -m pip install watchdog' -ForegroundColor Yellow
+    }
 }
 
 # --- config.json (keeps other settings when it already exists) -----------------------------------
@@ -136,13 +155,13 @@ if ($mode -eq 'exe') {
     $action = New-ScheduledTaskAction -Execute $pythonw -Argument ('"' + (Join-Path $InstallDir 'maldetect_agent.py') + '"') -WorkingDirectory $InstallDir
 }
 $trigger = New-ScheduledTaskTrigger -AtLogOn
-# Runs as whoever logs in (group BUILTIN\Users), so it watches that person's Downloads folder.
+# Runs as whoever logs in (group BUILTIN\Users), so it watches that person's own folders (Downloads, Documents, ...).
 $usersGroup = (New-Object Security.Principal.SecurityIdentifier 'S-1-5-32-545').Translate([Security.Principal.NTAccount]).Value
 $principal = New-ScheduledTaskPrincipal -GroupId $usersGroup -RunLevel Limited
 $taskSettings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable `
     -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) -MultipleInstances IgnoreNew
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Principal $principal -Settings $taskSettings `
-    -Description 'Reports new downloads to the MalDetect server.' -Force | Out-Null
+    -Description 'Reports new downloads and file activity to the MalDetect server.' -Force | Out-Null
 
 Write-Step 'Starting the agent now'
 Start-ScheduledTask -TaskName $TaskName

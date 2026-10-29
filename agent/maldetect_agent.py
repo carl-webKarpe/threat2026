@@ -4,7 +4,11 @@ Runs on a PC or laptop, watches the Downloads folder, and reports every finished
 (file name, SHA-256, size, and on Windows the source URL) to the MalDetect server, which checks
 it with VirusTotal. Results are shown to administrators on the MalDetect server; nothing is shown on this PC.
 
-Uses only the Python standard library (Python 3.9+). Usage:
+It also reports file activity (files created, modified, deleted, renamed or moved) in the user's Desktop,
+Documents, Downloads, Pictures, Videos and Music folders and in extra folders; see file_activity.py.
+
+Python 3.9+. File activity in real time needs the watchdog package (py -m pip install watchdog); without it the
+folders are compared every 30 seconds instead. Usage:
 
     python maldetect_agent.py                 # uses config.json next to this script (or next to MalDetectAgent.exe)
     python maldetect_agent.py --config other.json
@@ -33,7 +37,13 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-AGENT_VERSION = "1.3.0"
+try:
+    from file_activity import FileActivityMonitor
+except ImportError as activity_import_error:  # file_activity.py was not copied next to this script
+    FileActivityMonitor = None
+    ACTIVITY_IMPORT_ERROR = str(activity_import_error)
+
+AGENT_VERSION = "1.4.0"
 
 # Browsers write partial downloads under these extensions and rename the file when it is complete.
 PARTIAL_DOWNLOAD_SUFFIXES = {".crdownload", ".part", ".partial", ".tmp", ".download", ".opdownload", ".!ut"}
@@ -51,6 +61,14 @@ DEFAULT_CONFIG = {
     "verify_tls": True,
     "ca_file": "",  # certificate file of the server for HTTPS with your own certificate (see SETUP-GUIDE.md)
     "state_file": "agent_state.json",
+    # File activity monitoring (created, modified, deleted, renamed and moved files and folders).
+    "activity_monitoring": True,
+    "activity_known_folders": ["Desktop", "Documents", "Downloads", "Pictures", "Videos", "Music"],
+    "activity_extra_folders": [],  # more folders on this PC, for example "D:\\Lab\\Projects"
+    "activity_recursive": True,  # include subfolders
+    "activity_reconcile_minutes": 15,  # how often the folders are compared with the saved file list
+    "activity_poll_seconds": 30,  # without watchdog: how often the folders are compared
+    "activity_ignore_patterns": [],  # more file names to ignore, for example "*.bak"
 }
 
 log = logging.getLogger("maldetect")
@@ -152,6 +170,13 @@ class Agent:
         self.max_upload_bytes = 20 * 1024 * 1024
         self.next_heartbeat = 0.0
         self.next_command_poll = 0.0
+        self.activity = None
+        if config["activity_monitoring"]:
+            if FileActivityMonitor is None:
+                log.error("File activity monitoring is off: file_activity.py is missing (%s). Copy it next to "
+                          "maldetect_agent.py.", ACTIVITY_IMPORT_ERROR)
+            else:
+                self.activity = FileActivityMonitor(self.client, config, config_dir)
 
     def _load_state(self) -> dict:
         try:
@@ -171,6 +196,12 @@ class Agent:
     def _fingerprint(stat: os.stat_result) -> str:
         return f"{stat.st_size}:{int(stat.st_mtime)}"
 
+    def shutdown(self) -> None:
+        """Stops file activity monitoring (saving its file list) and tells the server the agent stops."""
+        if self.activity is not None:
+            self.activity.stop()
+        self.say_goodbye()
+
     def say_goodbye(self) -> None:
         """Tells the server this agent is stopping, so the device shows Offline right away."""
         if getattr(self, "_said_goodbye", False):
@@ -186,13 +217,15 @@ class Agent:
         if time.time() < self.next_heartbeat:
             return
         self.next_heartbeat = time.time() + self.config["heartbeat_seconds"]
+        body = {"hostname": socket.gethostname(), "os": f"{platform.system()} {platform.release()}", "agent_version": AGENT_VERSION}
+        if self.activity is not None:
+            body["activity"] = self.activity.status()
         try:
-            response = self.client.post_json(
-                "heartbeat.php",
-                {"hostname": socket.gethostname(), "os": f"{platform.system()} {platform.release()}", "agent_version": AGENT_VERSION},
-            )
+            response = self.client.post_json("heartbeat.php", body)
             self.max_upload_bytes = int(response.get("max_upload_bytes", self.max_upload_bytes))
-        except (ApiError, OSError) as error:
+            if self.activity is not None and isinstance(response.get("activity"), dict):
+                self.activity.set_admin_folders(response["activity"].get("extra_folders") or [])
+        except (ApiError, OSError, ValueError) as error:
             log.error("Heartbeat failed: %s", error)
 
     def candidate_files(self):
@@ -361,6 +394,8 @@ class Agent:
         log.info("MalDetect agent %s watching: %s", AGENT_VERSION, ", ".join(map(str, self.watch_dirs)))
         self.heartbeat()
         self.baseline()
+        if self.activity is not None and not once:
+            self.activity.start()
         next_result_poll = 0.0
         while True:
             self.heartbeat()
@@ -451,7 +486,7 @@ def watch_console_close(agent: "Agent") -> None:
     def on_console_event(event: int) -> bool:
         # 2 = window closed, 5 = log off, 6 = shut down. Ctrl+C (0) is handled as KeyboardInterrupt.
         if event in (2, 5, 6):
-            agent.say_goodbye()
+            agent.shutdown()
         return False
 
     # Keep a reference so the callback is not garbage-collected while Windows still uses it.
@@ -483,7 +518,7 @@ def main() -> None:
     try:
         agent.run(once=args.once)
     except KeyboardInterrupt:
-        agent.say_goodbye()
+        agent.shutdown()
 
 
 if __name__ == "__main__":

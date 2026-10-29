@@ -7,12 +7,13 @@ rem The result is the folder agent\dist: copy that whole folder to each lab PC a
 setlocal
 cd /d "%~dp0"
 
-echo Installing PyInstaller...
-python -m pip install --upgrade pyinstaller
+echo Installing PyInstaller and watchdog (real-time file activity monitoring)...
+python -m pip install --upgrade pyinstaller watchdog
 if errorlevel 1 goto :error
 
 echo Building MalDetectAgent.exe...
-python -m PyInstaller --onefile --noconsole --clean --name MalDetectAgent maldetect_agent.py
+rem file_activity.py and watchdog are bundled automatically; the hidden import makes sure the Windows watcher is included.
+python -m PyInstaller --onefile --noconsole --clean --name MalDetectAgent --hidden-import watchdog.observers.read_directory_changes maldetect_agent.py
 if errorlevel 1 goto :error
 
 copy /Y config.example.json dist\ >nul
