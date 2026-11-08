@@ -212,9 +212,20 @@ The agent also reports what happens to files in the **Desktop, Documents, Downlo
 
 **Monitored folders of one PC:** choose the PC in **Device (PC)** and click **Apply Filters**. The box *Monitored folders on …* shows each folder as **Watching**, **Unavailable** (it does not exist, or a USB drive or network share is not connected) or **Error** (no permission). **Mode: Polling** means the PC's agent has no watchdog package, so changes appear up to 30 seconds later (SETUP-GUIDE.md, Change 19).
 
-**Extra folders (Admin):** in the same box, type one full path per line, for example `D:\Lab\Projects` or `\\server\class`, and click **Save Folders**. The agent picks them up within a minute.
+**Extra folders (Admin):** in the same box, type one full path per line, for example `D:\Lab\Projects` or `\\server\class`, and click **Save Settings**. The agent picks them up within a minute.
 
-The Superadmin can open **File Activity** to review it, but cannot change folders or start scans.
+**Too many events from one place? Ignore it (Admin).** With a PC chosen, **Busiest folders** and **Busiest file types** show where most of its events come from. Programs often write thousands of files: a `.git` folder, a build or cache folder, log files. Click **Ignore** next to the folder or type, then **Save Settings**. You can also type in **Ignore on this PC**, one per line:
+
+| Line | Skips |
+| --- | --- |
+| `*.log` | every file ending in `.log` |
+| `node_modules` or `.git` | every file or folder with that name, and everything inside it |
+| `C:\Users\me\Documents\Cache` | that folder and everything inside it |
+| `C:\Users\*\Documents\Cache` | that folder for every Windows user of the PC |
+
+The agent picks up the list within a minute. Ignoring affects new events only; earlier events stay in the list. Delete a line and save to monitor it again. This needs agent 1.4.1 (SETUP-GUIDE.md, Change 20).
+
+The Superadmin can open **File Activity** to review it (including the busiest lists and the ignore list), but cannot change folders, the ignore list, or start scans.
 
 ---
 

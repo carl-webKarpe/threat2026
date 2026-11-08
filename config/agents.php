@@ -149,6 +149,34 @@ function agent_parse_extra_folders(?string $text): array
     return array_slice(array_values(array_unique($folders)), 0, AGENT_MAX_EXTRA_FOLDERS);
 }
 
+/** Most ignore patterns an admin can set for one device. */
+const AGENT_MAX_IGNORE_PATTERNS = 50;
+
+/**
+ * Files and folders an admin wants left out of file activity monitoring, one pattern per line: a name that may
+ * contain * and ? (*.log, node_modules, ~*.tmp), or a full folder path (D:\Data\Cache, C:\Users\*\Documents\Cache)
+ * that is skipped with everything in it. A path that is not a full path is not kept.
+ *
+ * @return list<string>
+ */
+function agent_parse_ignore_patterns(?string $text): array
+{
+    $patterns = [];
+    foreach (preg_split('/\r\n|\r|\n/', (string) $text) ?: [] as $line) {
+        $pattern = trim($line);
+        if ($pattern === '' || mb_strlen($pattern) > 260 || preg_match('/[\x00-\x1F]/', $pattern)) {
+            continue;
+        }
+        $isPath = strpbrk($pattern, '\\/') !== false;
+        if ($isPath && !preg_match('#^([A-Za-z]:[\\\\/]|\\\\\\\\|/)#', $pattern)) {
+            continue;
+        }
+        $patterns[] = $pattern;
+    }
+
+    return array_slice(array_values(array_unique($patterns)), 0, AGENT_MAX_IGNORE_PATTERNS);
+}
+
 /** SQL condition that is true for online devices. $table is the devices table name or alias. */
 function agent_online_sql(string $table = 'devices'): string
 {

@@ -784,9 +784,63 @@ The first line should say `MalDetect agent 1.4.0`. On the first start the agent 
 5. Delete it (normal delete): **FILE_DELETED**, *Moved to the Recycle Bin*. Delete another one with **Shift+Delete**: *Not in the Recycle Bin: deleted permanently*.
 6. Stop the agent, rename a file, start the agent again: the rename appears marked **Found later**, with *Exact time unknown*.
 
-**Extra folders:** on **File Activity**, choose the PC, type one full path per line in **Extra folders to monitor on this PC** (for example `D:\Lab\Projects`), and click **Save Folders**. The agent starts watching them within a minute. You can also add folders on the PC itself in `config.json` under `"activity_extra_folders"`, for example `["D:\\Lab\\Projects"]`.
+**Extra folders:** on **File Activity**, choose the PC, type one full path per line in **Extra folders to monitor on this PC** (for example `D:\Lab\Projects`), and click **Save Settings** (called **Save Folders** before Change 20). The agent starts watching them within a minute. You can also add folders on the PC itself in `config.json` under `"activity_extra_folders"`, for example `["D:\\Lab\\Projects"]`.
 
 **Settings** in the agent's `config.json` (all optional): `activity_monitoring` (`false` turns it off), `activity_known_folders` (which of the six folders), `activity_extra_folders`, `activity_recursive` (subfolders), `activity_reconcile_minutes` (how often the folders are compared with the saved list, default 15), `activity_ignore_patterns` (more file names to skip, for example `"*.bak"`). Temporary files (`~$*`, `*.tmp`, `*.crdownload`, `desktop.ini`, …) are always skipped.
+
+### Change 20: Ignore noisy files and folders in File Activity
+
+**What changed:**
+
+- **File Activity**, when you choose a PC: new **Busiest folders** and **Busiest file types** lists show where that PC's events come from (for example a `.git` folder or a program's cache that writes thousands of files). The filters at the top also apply to these lists.
+- Each line has an **Ignore** button (Admin only). It adds that folder or file type to the new box **Ignore on this PC**; click **Save Settings** to use it. You can also type in the box yourself, one pattern per line:
+  - a **name**, skipped wherever it appears: `*.log`, `*.tmp`, `node_modules`, `.git`;
+  - a **full folder path**, skipped with everything inside it: `C:\Users\me\Documents\Cache`, `D:\Games\Steam`. `*` works here too: `C:\Users\*\Documents\Cache`.
+- The agent (version **1.4.1**) receives the list within a minute. Changing the list never creates fake "deleted" or "created" events. Events already in the list stay there; ignoring affects new events only.
+- The Superadmin sees the busiest lists and the ignore list, but cannot change them.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Run this SQL in Workbench** (same as `database/migrations/phase14_activity_ignore.sql`), with **Ctrl+Shift+Enter**:
+
+```sql
+USE maldetect_db;
+
+-- Phase 14: files and folders an admin wants left out of file activity monitoring, per device.
+-- Safe to run more than once.
+
+-- One pattern per line: a name such as *.log or node_modules, or a full folder path such as D:\Data\Cache.
+SET @sql := IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'devices' AND COLUMN_NAME = 'activity_ignore') = 0,
+    'ALTER TABLE devices ADD COLUMN activity_ignore TEXT NULL', 'DO 0');
+PREPARE phase14_stmt FROM @sql; EXECUTE phase14_stmt; DEALLOCATE PREPARE phase14_stmt;
+```
+
+**Step 3: Check it worked:**
+
+```sql
+USE maldetect_db;
+SHOW COLUMNS FROM devices LIKE 'activity_ignore';
+```
+
+It returns one row.
+
+**Step 4: Update the agent** on every monitored PC, the same way as in Change 19, Step 4: run `agent\build_exe.bat` on the server, copy the new `dist` folder to each PC, and run the installer there (PowerShell as Administrator, inside the copied `dist` folder):
+
+```powershell
+$token = (Get-Content C:\MalDetectAgent\config.json -Raw | ConvertFrom-Json).device_token
+powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://<server IP>/threat2026 -Token $token
+```
+
+With Python (Way B), copy the new `maldetect_agent.py` and `file_activity.py` and restart the agent. `Get-Content C:\MalDetectAgent\agent.log -Tail 20` should show `MalDetect agent 1.4.1`.
+
+**Step 5: Test.**
+
+1. Open **File Activity**, choose the PC and click **Apply Filters**. Under the folder list you see **Busiest folders** and **Busiest file types**.
+2. On the PC, create a file `test.log` on the Desktop: **FILE_CREATED** appears.
+3. On the server, click **Ignore** next to `*.log` (or type `*.log` in **Ignore on this PC**), then **Save Settings**.
+4. Wait a minute, then create `test2.log` on the PC's Desktop: it does **not** appear. A file `test2.txt` still appears.
+5. The agent log on the PC shows `Ignore list from the server updated`.
 
 ---
 

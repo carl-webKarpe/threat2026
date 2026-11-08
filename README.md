@@ -48,6 +48,7 @@ You can run the script again safely. It keeps existing tables and accounts.
 | `phase11_threat_alerts.sql` | threat alert emails |
 | `phase12_agent_stop.sql` | `devices.agent_stopped_at` (Offline right away) |
 | `phase13_file_activity.sql` | `file_activity_events`, monitored-folder columns on `devices` |
+| `phase14_activity_ignore.sql` | `devices.activity_ignore` (files and folders left out of file activity) |
 
 PHP connects with `127.0.0.1:3306`, database `maldetect_db`, user `root` and an empty password by default. If you use other values, set these environment variables: `MALDETECT_DB_HOST`, `MALDETECT_DB_PORT`, `MALDETECT_DB_NAME`, `MALDETECT_DB_USER`, `MALDETECT_DB_PASSWORD`.
 
@@ -130,7 +131,7 @@ Every request sends the header `X-Device-Token: <token>`. Responses are JSON.
 
 | Endpoint | Method | Body | Purpose |
 | --- | --- | --- | --- |
-| `api/agent/heartbeat.php` | POST | `{"hostname", "os", "agent_version", "activity"}` | Marks the device online; `activity` is the file monitor's folder status; the response lists the admin's extra folders in `activity.extra_folders` |
+| `api/agent/heartbeat.php` | POST | `{"hostname", "os", "agent_version", "activity"}` | Marks the device online; `activity` is the file monitor's folder status; the response lists the admin's extra folders in `activity.extra_folders` and the patterns to skip in `activity.ignore_patterns` |
 | `api/agent/activity.php` | POST | `{"events": [...]}` (up to 500) | File activity events; each has `event_id` (UUID), `event_type`, `source`, `old_path` / `new_path`, `file_size`, `event_time` (null when unknown), `detected_at`, `window_start`, `details`. Responds with `accepted`, `duplicates` and `rejected` |
 | `api/agent/report.php` | POST | `{"file_name", "sha256", "file_size", "file_path", "source_url", "referrer_url", "downloaded_at"}` | Reports a download; `file_name` and `sha256` are required; `trigger` is `download` or `manual_scan` |
 | `api/agent/result.php?id=N` | GET | — | Latest verdict for a detection |

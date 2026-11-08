@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 // File activity page, shared by admin/activity.php and superadmin/activity.php.
-// Before including: $activitySidebar (sidebar file), $activityCanEdit (true shows the extra-folders form; the page
+// Before including: $activitySidebar (sidebar file), $activityCanEdit (true shows the folder and ignore-list form; the page
 // itself must handle that POST), optional $activityNotice / $activityError. Times are stored in UTC and shown in
 // the server's time zone, with the UTC time on hover.
 
@@ -120,6 +120,41 @@ try {
     $loadError = true;
 }
 
+// For one PC: its ignore list, and where its events come from (busiest folders and file types), so noise from
+// a program that writes many files can be found and ignored. Counts the latest events matching the filters.
+$ignoreText = null;
+$busyFolders = [];
+$busyTypes = [];
+$busySample = 0;
+if (is_array($selectedDevice) && !$loadError) {
+    try {
+        $ignore = $pdo->prepare('SELECT activity_ignore FROM devices WHERE id = :id');
+        $ignore->execute(['id' => $selectedDevice['id']]);
+        $ignoreText = (string) ($ignore->fetchColumn() ?: '');
+    } catch (PDOException $exception) {
+        $ignoreText = null; // Phase 14 not installed yet
+    }
+    $sample = $pdo->prepare(
+        'SELECT COALESCE(new_path, old_path) AS path, COALESCE(new_extension, old_extension) AS extension, is_directory
+         FROM file_activity_events' . $whereSql . ' ORDER BY detected_at_utc DESC LIMIT 20000'
+    );
+    $sample->execute($parameters);
+    foreach ($sample as $row) {
+        $busySample++;
+        $path = (string) $row['path'];
+        $position = max((int) strrpos($path, '\\'), (int) strrpos($path, '/'));
+        $folder = $position > 0 ? substr($path, 0, $position) : $path;
+        $busyFolders[$folder] = ($busyFolders[$folder] ?? 0) + 1;
+        if (!(int) $row['is_directory'] && $row['extension'] !== null) {
+            $busyTypes[$row['extension']] = ($busyTypes[$row['extension']] ?? 0) + 1;
+        }
+    }
+    arsort($busyFolders);
+    arsort($busyTypes);
+    $busyFolders = array_slice($busyFolders, 0, 8, true);
+    $busyTypes = array_slice($busyTypes, 0, 8, true);
+}
+
 $h = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 /** Local time for display, from a UTC DATETIME(3) value. */
 $localTime = static function (?string $utc) use ($localZone, $utcZone): string {
@@ -195,13 +230,51 @@ require_once __DIR__ . '/header.php';
 					</ul>
 				<?php endif; ?>
 				</div>
+				<?php if ($busySample > 0): ?>
+					<div class="mt-5 grid gap-4 lg:grid-cols-2">
+						<div><h3 class="text-sm font-semibold text-white">Busiest folders</h3><p class="text-xs text-slate-500">Where the latest <?= $busySample ?> matching event(s) of this PC happened.</p>
+							<ul class="mt-2 grid gap-1 text-xs">
+								<?php foreach ($busyFolders as $folder => $count): ?>
+									<li class="flex items-center gap-3 rounded-lg bg-slate-950/40 px-3 py-2"><span class="w-14 shrink-0 text-right font-mono text-slate-300"><?= (int) $count ?></span><span class="min-w-0 flex-1 break-all font-mono text-slate-400"><?= $h($folder) ?></span><?php if ($activityCanEdit && $ignoreText !== null): ?><button type="button" class="shrink-0 text-amber-200 hover:text-white" data-ignore-add="<?= $h($folder) ?>">Ignore</button><?php endif; ?></li>
+								<?php endforeach; ?>
+							</ul>
+						</div>
+						<div><h3 class="text-sm font-semibold text-white">Busiest file types</h3><p class="text-xs text-slate-500">File extensions in the same events.</p>
+							<ul class="mt-2 grid gap-1 text-xs">
+								<?php foreach ($busyTypes as $extension => $count): ?>
+									<li class="flex items-center gap-3 rounded-lg bg-slate-950/40 px-3 py-2"><span class="w-14 shrink-0 text-right font-mono text-slate-300"><?= (int) $count ?></span><span class="min-w-0 flex-1 font-mono text-slate-400">*.<?= $h($extension) ?></span><?php if ($activityCanEdit && $ignoreText !== null): ?><button type="button" class="shrink-0 text-amber-200 hover:text-white" data-ignore-add="*.<?= $h($extension) ?>">Ignore</button><?php endif; ?></li>
+								<?php endforeach; ?>
+								<?php if (!$busyTypes): ?><li class="px-3 py-2 text-slate-500">No files with an extension.</li><?php endif; ?>
+							</ul>
+						</div>
+					</div>
+				<?php endif; ?>
 				<?php if ($activityCanEdit): ?>
-					<form method="post" class="mt-5">
+					<form method="post" class="mt-5 grid gap-4 lg:grid-cols-2">
 						<input type="hidden" name="csrf_token" value="<?= $h(csrf_token()) ?>"><input type="hidden" name="action" value="save_folders"><input type="hidden" name="id" value="<?= (int) $selectedDevice['id'] ?>">
-						<label class="text-sm text-slate-400">Extra folders to monitor on this PC (one full path per line, for example <code>D:\Lab\Projects</code> or <code>\\server\class</code>; at most <?= AGENT_MAX_EXTRA_FOLDERS ?>)<textarea name="folders" rows="3" class="<?= $inputClass ?> font-mono text-xs"><?= $h($selectedDevice['activity_folders'] ?? '') ?></textarea></label>
-						<button class="mt-3 rounded-xl border border-violet-300/40 px-5 py-3 text-sm font-bold text-violet-200 hover:bg-violet-300/10" type="submit">Save Folders</button>
-						<span class="ml-3 text-xs text-slate-500">The agent picks them up within a minute.</span>
+						<label class="text-sm text-slate-400">Extra folders to monitor on this PC (one full path per line, for example <code>D:\Lab\Projects</code> or <code>\\server\class</code>; at most <?= AGENT_MAX_EXTRA_FOLDERS ?>)<textarea name="folders" rows="4" class="<?= $inputClass ?> font-mono text-xs"><?= $h($selectedDevice['activity_folders'] ?? '') ?></textarea></label>
+						<?php if ($ignoreText !== null): ?>
+							<label class="text-sm text-slate-400">Ignore on this PC (one per line: a name such as <code>*.log</code> or <code>node_modules</code>, or a full folder path such as <code>C:\Users\me\Documents\Cache</code>; at most <?= AGENT_MAX_IGNORE_PATTERNS ?>)<textarea name="ignore" rows="4" class="<?= $inputClass ?> font-mono text-xs" data-ignore-list><?= $h($ignoreText) ?></textarea></label>
+						<?php else: ?>
+							<p class="text-sm text-amber-200">To ignore files and folders on this PC, run database/migrations/phase14_activity_ignore.sql first (SETUP-GUIDE.md, Change 20).</p>
+						<?php endif; ?>
+						<div class="lg:col-span-2"><button class="rounded-xl border border-violet-300/40 px-5 py-3 text-sm font-bold text-violet-200 hover:bg-violet-300/10" type="submit">Save Settings</button>
+						<span class="ml-3 text-xs text-slate-500">The agent picks them up within a minute. Ignoring affects new events only; earlier events stay in the list.</span></div>
 					</form>
+					<script>
+					document.addEventListener('click', (event) => {
+						const button = event.target.closest('[data-ignore-add]');
+						const list = document.querySelector('[data-ignore-list]');
+						if (!button || !list) return;
+						const lines = list.value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+						if (!lines.includes(button.dataset.ignoreAdd)) lines.push(button.dataset.ignoreAdd);
+						list.value = lines.join('\n');
+						button.textContent = 'Added — click Save Settings';
+						list.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					});
+					</script>
+				<?php elseif ($ignoreText !== null && trim($ignoreText) !== ''): ?>
+					<div class="mt-5 text-sm text-slate-400">Ignored on this PC:<pre class="mt-2 whitespace-pre-wrap rounded-xl bg-slate-950/60 p-3 font-mono text-xs text-slate-300"><?= $h($ignoreText) ?></pre></div>
 				<?php endif; ?>
 			</section>
 		<?php endif; ?>

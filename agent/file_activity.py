@@ -212,6 +212,23 @@ def same_file(old: list, new: list) -> bool:
     return old[1] == new[1] and old[2] == new[2]
 
 
+def split_ignore_patterns(patterns: list[str]) -> tuple[list[str], list[str]]:
+    """Splits ignore patterns into name patterns ("*.log", "node_modules": any file or folder with that name)
+    and folder paths ("D:\\Data\\Cache": that folder and everything in it). Both may contain * and ?."""
+    names: list[str] = []
+    paths: list[str] = []
+    for pattern in patterns:
+        pattern = str(pattern).strip()
+        if not pattern:
+            continue
+        if "\\" in pattern or "/" in pattern:
+            if os.path.isabs(pattern):
+                paths.append(path_key(pattern))
+        else:
+            names.append(pattern.lower())
+    return names, paths
+
+
 def is_link(stat_result: os.stat_result) -> bool:
     if stat_module.S_ISLNK(stat_result.st_mode):
         return True
@@ -335,8 +352,10 @@ class FileActivityMonitor:
         self.client = client
         self.config = config
         self.recursive = bool(config.get("activity_recursive", True))
-        patterns = DEFAULT_IGNORE_PATTERNS + list(config.get("activity_ignore_patterns") or [])
-        self.ignore_patterns = [str(pattern).lower() for pattern in patterns]
+        self.local_ignore = DEFAULT_IGNORE_PATTERNS + [str(p) for p in config.get("activity_ignore_patterns") or []]
+        self.admin_ignore: list[str] = []
+        self.admin_ignore_received = False  # True once the server sent its list (newer than the saved one)
+        self.ignore_names, self.ignore_paths = split_ignore_patterns(self.local_ignore)
         self.max_files = int(config.get("activity_max_files", 200000))
         self.reconcile_seconds = max(60, int(float(config.get("activity_reconcile_minutes", 15)) * 60))
         self.poll_seconds = max(5, int(config.get("activity_poll_seconds", 30)))
@@ -404,6 +423,18 @@ class FileActivityMonitor:
         self.admin_folders = cleaned
         if self.started:
             self.raw.put(("roots",))
+
+    def set_admin_ignore(self, patterns: list) -> None:
+        """Files and folders the administrator wants skipped on this PC (sent with each heartbeat response)."""
+        cleaned = [str(pattern) for pattern in patterns if isinstance(pattern, str) and pattern.strip()][:50]
+        if cleaned == self.admin_ignore and self.admin_ignore_received:
+            return
+        self.admin_ignore_received = True
+        if self.started:
+            self.raw.put(("ignore", cleaned))
+        else:
+            self.admin_ignore = cleaned
+            self.ignore_names, self.ignore_paths = split_ignore_patterns(self.local_ignore + cleaned)
 
     def status(self) -> dict:
         with self.lock:
@@ -513,17 +544,51 @@ class FileActivityMonitor:
         matches = [root for root in self.roots if is_inside(key, root.key)]
         return max(matches, key=lambda root: len(root.key)) if matches else None
 
-    def _ignored_name(self, name: str) -> bool:
+    def _ignored_name(self, name: str, patterns: list[str] | None = None) -> bool:
         lowered = name.lower()
-        return any(fnmatch.fnmatchcase(lowered, pattern) for pattern in self.ignore_patterns)
+        return any(fnmatch.fnmatchcase(lowered, pattern) for pattern in (self.ignore_names if patterns is None else patterns))
 
-    def _ignored(self, path: str) -> bool:
-        """True for temporary files and for anything inside an ignored folder, below the watched folder."""
-        root = self._root_for(path_key(path))
+    def _ignored_path(self, key: str, patterns: list[str] | None = None) -> bool:
+        """True for a path inside a folder on the ignore list."""
+        for pattern in self.ignore_paths if patterns is None else patterns:
+            if fnmatch.fnmatchcase(key, pattern) or fnmatch.fnmatchcase(key, pattern.rstrip(os.sep) + os.sep + "*"):
+                return True
+        return False
+
+    def _ignored(self, path: str, patterns: tuple[list[str], list[str]] | None = None) -> bool:
+        """True for temporary files, ignored names and folders, and anything inside them, below the watched folder."""
+        key = path_key(path)
+        root = self._root_for(key)
         if root is None:
             return True
+        names, paths = patterns or (self.ignore_names, self.ignore_paths)
+        if self._ignored_path(key, paths):
+            return True
         relative = os.path.relpath(os.path.normpath(path), os.path.normpath(root.path))
-        return any(self._ignored_name(part) for part in Path(relative).parts if part not in (".", ""))
+        return any(self._ignored_name(part, names) for part in Path(relative).parts if part not in (".", ""))
+
+    def _apply_ignore(self, patterns: list[str]) -> None:
+        """Uses a new ignore list from the administrator without reporting fake changes: files that are now
+        ignored are dropped from the saved file list, and files that are no longer ignored are added to it."""
+        old = (self.ignore_names, self.ignore_paths)
+        self.admin_ignore = patterns
+        self.ignore_names, self.ignore_paths = split_ignore_patterns(self.local_ignore + patterns)
+        for pending in (self.pending_deletes, self.pending_creates, self.pending_mods):
+            for key in [key for key in pending if self._ignored(self.inventory.get(key, [key])[0])]:
+                del pending[key]
+        dropped = [key for key, entry in self.inventory.items() if self._ignored(entry[0])]
+        for key in dropped:
+            del self.inventory[key]
+        roots = [root for root in self.roots if root.covered_by is None and root.status in ("watching", "polling")]
+        found, _ = self._scan(roots)
+        added = 0
+        for key, entry in found.items():
+            if key not in self.inventory and self._ignored(entry[0], old):
+                self.inventory[key] = entry
+                added += 1
+        self.inventory_dirty = True
+        log.info("Ignore list from the server updated (%d pattern(s)): %d entries now skipped, %d no longer skipped.",
+                 len(patterns), len(dropped), added)
 
     # ---- inventory ----------------------------------------------------------------------------------------------
 
@@ -531,6 +596,11 @@ class FileActivityMonitor:
         try:
             data = json.loads(self.inventory_path.read_text(encoding="utf-8"))
             self.inventory = {key: entry for key, entry in data["entries"].items() if isinstance(entry, list) and len(entry) == 5}
+            # The last ignore list from the server, so ignored files are not reported when the agent starts while
+            # the server cannot be reached.
+            if not self.admin_ignore_received and isinstance(data.get("admin_ignore"), list):
+                self.admin_ignore = [str(pattern) for pattern in data["admin_ignore"]][:50]
+                self.ignore_names, self.ignore_paths = split_ignore_patterns(self.local_ignore + self.admin_ignore)
             saved_at = data.get("saved_at")
             self.inventory_saved_at = datetime.fromisoformat(saved_at.replace("Z", "+00:00")).timestamp() if saved_at else None
             return True
@@ -544,7 +614,8 @@ class FileActivityMonitor:
         temporary = self.inventory_path.with_suffix(".tmp")
         try:
             temporary.write_text(
-                json.dumps({"version": 1, "saved_at": iso_utc(time.time()), "entries": self.inventory}, ensure_ascii=False),
+                json.dumps({"version": 1, "saved_at": iso_utc(time.time()), "admin_ignore": self.admin_ignore,
+                            "entries": self.inventory}, ensure_ascii=False),
                 encoding="utf-8",
             )
             temporary.replace(self.inventory_path)
@@ -572,7 +643,7 @@ class FileActivityMonitor:
                     continue  # a subfolder without permission
                 with iterator:
                     for entry in iterator:
-                        if self._ignored_name(entry.name):
+                        if self._ignored_name(entry.name) or (self.ignore_paths and self._ignored_path(path_key(entry.path))):
                             continue
                         try:
                             info = entry.stat(follow_symlinks=False)
@@ -657,6 +728,9 @@ class FileActivityMonitor:
     def _handle(self, item: tuple) -> None:
         if item[0] == "roots":
             self._apply_roots()
+            return
+        if item[0] == "ignore":
+            self._apply_ignore(item[1])
             return
         _, kind, src, dest, is_dir, synthetic, event_time = item
         if synthetic:

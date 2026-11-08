@@ -43,7 +43,7 @@ except ImportError as activity_import_error:  # file_activity.py was not copied 
     FileActivityMonitor = None
     ACTIVITY_IMPORT_ERROR = str(activity_import_error)
 
-AGENT_VERSION = "1.4.0"
+AGENT_VERSION = "1.4.1"
 
 # Browsers write partial downloads under these extensions and rename the file when it is complete.
 PARTIAL_DOWNLOAD_SUFFIXES = {".crdownload", ".part", ".partial", ".tmp", ".download", ".opdownload", ".!ut"}
@@ -225,6 +225,7 @@ class Agent:
             self.max_upload_bytes = int(response.get("max_upload_bytes", self.max_upload_bytes))
             if self.activity is not None and isinstance(response.get("activity"), dict):
                 self.activity.set_admin_folders(response["activity"].get("extra_folders") or [])
+                self.activity.set_admin_ignore(response["activity"].get("ignore_patterns") or [])
         except (ApiError, OSError, ValueError) as error:
             log.error("Heartbeat failed: %s", error)
 

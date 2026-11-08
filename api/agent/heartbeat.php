@@ -5,7 +5,8 @@ declare(strict_types=1);
 // POST, JSON body: {"hostname": "...", "os": "...", "agent_version": "...", "stopping": false}
 // "stopping": true is sent once when the agent shuts down, so the device shows Offline right away.
 // Optional "activity": {"mode": "realtime", "queued": 0, "folders": [{"label", "path", "status", "message"}]}
-// is the file activity monitor's status; the response's "activity.extra_folders" lists the admin's extra folders.
+// is the file activity monitor's status; the response's "activity.extra_folders" lists the admin's extra folders
+// and "activity.ignore_patterns" the files and folders the admin wants skipped on this device.
 // Header: X-Device-Token: <device token from Admin > Devices>
 
 require_once __DIR__ . '/../../config/agents.php';
@@ -80,6 +81,14 @@ try {
     } catch (PDOException $exception) {
         // Database without the Phase 13 columns: file activity status is simply not stored.
     }
+    $ignorePatterns = [];
+    try {
+        $ignore = $pdo->prepare('SELECT activity_ignore FROM devices WHERE id = :id');
+        $ignore->execute(['id' => $device['id']]);
+        $ignorePatterns = agent_parse_ignore_patterns($ignore->fetchColumn() ?: null);
+    } catch (PDOException $exception) {
+        // Database without the Phase 14 column: no ignore list.
+    }
 } catch (Throwable $exception) {
     error_log('Agent heartbeat failed: ' . $exception->getMessage());
     agent_json_response(['success' => false, 'message' => 'The server is temporarily unavailable.'], 500);
@@ -90,5 +99,5 @@ agent_json_response([
     'device' => ['id' => (int) $device['id'], 'name' => (string) $device['name']],
     'server_time' => gmdate('c'),
     'max_upload_bytes' => MAX_UPLOAD_SIZE,
-    'activity' => ['extra_folders' => $extraFolders],
+    'activity' => ['extra_folders' => $extraFolders, 'ignore_patterns' => $ignorePatterns],
 ]);

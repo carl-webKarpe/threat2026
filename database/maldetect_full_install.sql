@@ -1,6 +1,6 @@
 -- MalDetect full database install (fresh install).
 -- In MySQL Workbench: File > Open SQL Script > this file, then Query > Execute All (Ctrl+Shift+Enter).
--- Creates maldetect_db with every table up to Phase 13. Safe to run again: existing tables and seed accounts are kept.
+-- Creates maldetect_db with every table up to Phase 14. Safe to run again: existing tables and seed accounts are kept.
 -- For a database that already exists from an older phase, you may instead run only the files in migrations/.
 
 
@@ -270,3 +270,12 @@ SET @sql := IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'devices' AND COLUMN_NAME = 'activity_status_at') = 0,
     'ALTER TABLE devices ADD COLUMN activity_status_at TIMESTAMP NULL', 'DO 0');
 PREPARE phase13_stmt FROM @sql; EXECUTE phase13_stmt; DEALLOCATE PREPARE phase13_stmt;
+
+-- Phase 14: files and folders an admin wants left out of file activity monitoring, per device.
+-- Safe to run more than once.
+
+-- One pattern per line: a name such as *.log or node_modules, or a full folder path such as D:\Data\Cache.
+SET @sql := IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'devices' AND COLUMN_NAME = 'activity_ignore') = 0,
+    'ALTER TABLE devices ADD COLUMN activity_ignore TEXT NULL', 'DO 0');
+PREPARE phase14_stmt FROM @sql; EXECUTE phase14_stmt; DEALLOCATE PREPARE phase14_stmt;
