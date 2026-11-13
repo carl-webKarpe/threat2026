@@ -868,6 +868,24 @@ powershell -ExecutionPolicy Bypass -File C:\MalDetectAgent\change_server.ps1 -Se
 
 Within a minute, **Devices** shows the PCs **● Online**. With HTTPS, first run `tools\setup_https.ps1 -ServerIp 192.168.0.63` on the server (Change 15) and use `https://` above.
 
+### Change 22: Installer uses 192.168.0.63 by itself, and a double-click installer
+
+**What changed:**
+
+- `install_agent.ps1` and `change_server.ps1` use **`http://192.168.0.63/threat2026`** when `-ServerUrl` is left out.
+- `install_agent.ps1` no longer needs `-Token` on a PC that already has the agent: it keeps that PC's token.
+- New **`install_agent.bat`** in the `dist` folder: double-click it, allow Administrator rights, paste the token (or press **Enter** to keep the installed one).
+
+**SQL to run:** none.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Build the package again** on the server: `cd agent`, then `.\build_exe.bat`. The new `dist` folder contains `install_agent.bat`.
+
+**Step 3: On each monitored PC,** copy the `dist` folder, double-click `install_agent.bat`, click **Yes**, paste the PC's token from **Devices** and press **Enter**. The window ends with **MalDetect agent installed.**
+
+The token must belong to **this** server's database. After moving the server to a new PC with a fresh database, register every PC again on **Devices** and use the new tokens; old tokens are refused (HTTP 401).
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)

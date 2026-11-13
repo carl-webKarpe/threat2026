@@ -18,6 +18,7 @@ if errorlevel 1 goto :error
 
 copy /Y config.example.json dist\ >nul
 copy /Y install_agent.ps1 dist\ >nul
+copy /Y install_agent.bat dist\ >nul
 copy /Y uninstall_agent.ps1 dist\ >nul
 copy /Y change_server.ps1 dist\ >nul
 if exist maldetect-ca.crt copy /Y maldetect-ca.crt dist\ >nul
@@ -25,7 +26,9 @@ if exist maldetect-ca.crt copy /Y maldetect-ca.crt dist\ >nul
 echo.
 echo Done. Copy the folder below to each lab PC (USB, shared folder, ...):
 echo     %~dp0dist
-echo It contains MalDetectAgent.exe, install_agent.ps1, uninstall_agent.ps1, change_server.ps1 and config.example.json.
+echo It contains MalDetectAgent.exe, install_agent.bat, install_agent.ps1, uninstall_agent.ps1, change_server.ps1 and config.example.json.
+echo Server address used by the installer: http://192.168.0.63/threat2026
+echo On each PC: double-click install_agent.bat and paste that PC's token.
 exit /b 0
 
 :error

@@ -8,11 +8,14 @@
 
         powershell -ExecutionPolicy Bypass -File C:\MalDetectAgent\change_server.ps1 -ServerUrl http://192.168.0.63/threat2026
 
+    Without -ServerUrl it uses http://192.168.0.63/threat2026.
+
     For HTTPS, use https://... and put the new maldetect-ca.crt next to this script or in C:\MalDetectAgent first
     (only needed if the CA itself changed; after an IP change the CA stays the same).
 #>
 param(
-    [Parameter(Mandatory = $true)][string]$ServerUrl,
+    # The MalDetect server's address. Change it here if the server gets another IP.
+    [string]$ServerUrl = 'http://192.168.0.63/threat2026',
     [string]$InstallDir = 'C:\MalDetectAgent'
 )
 

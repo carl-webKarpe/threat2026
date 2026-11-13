@@ -68,7 +68,9 @@ cd C:\xampp1\htdocs\threat2026\agent
 .\build_exe.bat
 ```
 
-After 1–2 minutes it prints **Done** and the folder `C:\xampp1\htdocs\threat2026\agent\dist`, which contains `MalDetectAgent.exe`, `install_agent.ps1`, `uninstall_agent.ps1` and `config.example.json` (plus `maldetect-ca.crt` if HTTPS is set up). Build it again after every agent update.
+After 1–2 minutes it prints **Done** and the folder `C:\xampp1\htdocs\threat2026\agent\dist`, which contains `MalDetectAgent.exe`, `install_agent.bat`, `install_agent.ps1`, `uninstall_agent.ps1` and `config.example.json` (plus `maldetect-ca.crt` if HTTPS is set up). Build it again after every agent update. The installer uses the server address `http://192.168.0.63/threat2026`.
+
+**Easiest:** on each monitored PC, double-click **`install_agent.bat`** in the copied `dist` folder, click **Yes** when Windows asks for Administrator rights, paste that PC's token and press **Enter**. On a PC that already has the agent, press **Enter** without a token to keep its token. Or use the PowerShell steps below.
 
 Copy the **whole `dist` folder** to a USB drive. Then on **each** monitored PC:
 

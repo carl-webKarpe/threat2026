@@ -6,15 +6,19 @@
     Run in PowerShell **as Administrator**, from the folder that contains MalDetectAgent.exe
     (built with build_exe.bat) or maldetect_agent.py (needs Python on this PC):
 
-        powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://192.168.0.63/threat2026 -Token mdt_...
+        powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -Token mdt_...
+
+    Or double-click install_agent.bat in the same folder: it asks for the token.
+    The server address is http://192.168.0.63/threat2026 unless -ServerUrl gives another one.
+    On a PC that already has the agent, -Token can be left out: the installed agent's token is kept.
 
     Running it again updates the agent and its settings (for example a new token or server address).
     To remove the agent, run uninstall_agent.ps1.
 
 .PARAMETER ServerUrl
-    Address of the MalDetect server, for example http://192.168.0.63/threat2026 (or https://... with -CaFile).
+    Optional. Address of the MalDetect server. Default: http://192.168.0.63/threat2026 (https://... with -CaFile).
 .PARAMETER Token
-    The device token from Admin > Devices (starts with mdt_).
+    The device token from Admin > Devices (starts with mdt_). Optional when the agent is already installed.
 .PARAMETER CaFile
     Optional. The MalDetect CA certificate for HTTPS (maldetect-ca.crt, made by tools\setup_https.ps1).
     When the server URL starts with https:// and maldetect-ca.crt is next to this script, it is used automatically.
@@ -22,8 +26,9 @@
     Where to install. Default: C:\MalDetectAgent
 #>
 param(
-    [Parameter(Mandatory = $true)][string]$ServerUrl,
-    [Parameter(Mandatory = $true)][string]$Token,
+    # The MalDetect server's address. Change it here if the server gets another IP.
+    [string]$ServerUrl = 'http://192.168.0.63/threat2026',
+    [string]$Token = '',
     [string]$CaFile = '',
     [string]$InstallDir = 'C:\MalDetectAgent'
 )
@@ -40,10 +45,21 @@ $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIden
 if (-not $isAdmin) {
     throw 'Please run PowerShell as Administrator (right-click PowerShell > Run as administrator), then run this script again.'
 }
+$Token = $Token.Trim()
+$existingConfig = Join-Path $InstallDir 'config.json'
+if (-not $Token -and (Test-Path $existingConfig)) {
+    # Already installed: keep this PC's token (the agent is only being updated).
+    $Token = [string](Get-Content $existingConfig -Raw | ConvertFrom-Json).device_token
+    Write-Host "Using the token of the agent already installed in $InstallDir." -ForegroundColor Gray
+}
+if (-not $Token) {
+    throw 'No token given and no agent installed yet. Register this PC on the Devices page and run again with -Token mdt_... (or double-click install_agent.bat).'
+}
 if ($Token -notmatch '^mdt_[0-9a-f]{64}$') {
     throw 'The token does not look right. Copy the full token from Admin > Devices (it starts with mdt_ and has 68 characters).'
 }
-$ServerUrl = $ServerUrl.TrimEnd('/')
+$ServerUrl = $ServerUrl.Trim().TrimEnd('/')
+Write-Host "Server: $ServerUrl" -ForegroundColor Gray
 if ($ServerUrl -notmatch '^https?://') {
     throw 'ServerUrl must start with http:// or https://, for example http://192.168.0.63/threat2026'
 }
