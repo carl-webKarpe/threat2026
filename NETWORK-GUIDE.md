@@ -1,6 +1,6 @@
 # MalDetect Network Guide (IP address, ipconfig, changing networks)
 
-The monitored PCs find the server by its **IP address**, for example `192.168.1.87`. That address belongs to the network the server is connected to, so it **changes when the server changes network**: home Wi-Fi, the lab's LAN cable, a hotspot, or sometimes just after a restart.
+The monitored PCs find the server by its **IP address**, for example `192.168.0.63`. That address belongs to the network the server is connected to, so it **changes when the server changes network**: home Wi-Fi, the lab's LAN cable, a hotspot, or sometimes just after a restart.
 
 This guide shows how to find the server's IP and what to change when it changes.
 
@@ -34,11 +34,11 @@ It prints the **Server IP** for each connection, whether that network is Private
 
    ```text
    Ethernet adapter Ethernet:
-      IPv4 Address. . . . . . . . . . . : 192.168.10.25
-      Default Gateway . . . . . . . . . : 192.168.10.1
+      IPv4 Address. . . . . . . . . . . : 192.168.0.63
+      Default Gateway . . . . . . . . . : 192.168.0.1
    ```
 
-   Here the server's IP is **192.168.10.25**.
+   Here the server's IP is **192.168.0.63**.
 
 **Which IP to use:**
 
@@ -51,7 +51,7 @@ It prints the **Server IP** for each connection, whether that network is Private
 
 ## Part 2: The server moved to another network: what to change
 
-Do these steps every time the server's IP changes. Example: the IP changed from `192.168.1.87` (Wi-Fi at home) to `192.168.10.25` (LAN cable in the lab).
+Do these steps every time the server's IP changes. Example: the IP changed from `10.220.231.61` (old Wi-Fi) to `192.168.0.63` (the new network).
 
 ### On the server (Laptop 1)
 
@@ -79,23 +79,23 @@ Set-NetFirewallRule -DisplayName "MalDetect Apache HTTPS" -Profile Any
 
 ```powershell
 cd C:\xampp1\htdocs\threat2026
-powershell -ExecutionPolicy Bypass -File .\tools\setup_https.ps1 -ServerIp 192.168.10.25
+powershell -ExecutionPolicy Bypass -File .\tools\setup_https.ps1 -ServerIp 192.168.0.63
 ```
 
 Then in the XAMPP Control Panel click **Stop** and **Start** next to **Apache**. The MalDetect CA stays the same, so the PCs keep their `maldetect-ca.crt`.
 
-**Step 5. Check the website.** On the server, open `http://192.168.10.25/threat2026/login.php` (with the new IP). The login page should open.
+**Step 5. Check the website.** On the server, open `http://192.168.0.63/threat2026/login.php` (with the new IP). The login page should open.
 
 ### On every monitored PC
 
-**Step 6. Test the new address.** In the PC's browser, open `http://192.168.10.25/threat2026/login.php`. If the login page opens, continue. If not, see **Problems** below; the agent cannot connect either.
+**Step 6. Test the new address.** In the PC's browser, open `http://192.168.0.63/threat2026/login.php`. If the login page opens, continue. If not, see **Problems** below; the agent cannot connect either.
 
 **Step 7. Point the agent to the new IP.** Choose the way the agent was installed:
 
 - **Installed with the installer** (`C:\MalDetectAgent` with `MalDetectAgent.exe`): in **PowerShell as Administrator** run:
 
   ```powershell
-  powershell -ExecutionPolicy Bypass -File C:\MalDetectAgent\change_server.ps1 -ServerUrl http://192.168.10.25/threat2026
+  powershell -ExecutionPolicy Bypass -File C:\MalDetectAgent\change_server.ps1 -ServerUrl http://192.168.0.63/threat2026
   ```
 
   It keeps the token, checks the new address and restarts the agent. (Agents installed before this script existed: run `install_agent.ps1` again with the new `-ServerUrl` and the device's token, or copy `change_server.ps1` from the server's `agent` folder into `C:\MalDetectAgent` first.)
@@ -103,7 +103,7 @@ Then in the XAMPP Control Panel click **Stop** and **Start** next to **Apache**.
 - **Running by hand with Python:** stop the agent with **Ctrl+C**, open its `config.json` (`notepad C:\MalDetectAgent\config.json`), change only the IP in `server_url`, save, and start it again:
 
   ```json
-  "server_url": "http://192.168.10.25/threat2026",
+  "server_url": "http://192.168.0.63/threat2026",
   ```
 
   ```powershell
@@ -130,12 +130,12 @@ Ask the lab's IT person to **reserve an IP for the server PC** on the router (a 
 
 Only do this when you know which addresses are free on that network (ask IT if you can). A wrong or duplicate address breaks the connection.
 
-1. Run `ipconfig` and note the current **IPv4 Address**, **Subnet Mask** and **Default Gateway**, for example `192.168.10.25`, `255.255.255.0`, `192.168.10.1`.
+1. Run `ipconfig` and note the current **IPv4 Address**, **Subnet Mask** and **Default Gateway**, for example `192.168.0.63`, `255.255.255.0`, `192.168.0.1`.
 2. Open Settings > **Network & internet** > **Ethernet** (or Wi-Fi > your network) > **IP assignment** > **Edit**.
 3. Choose **Manual**, turn on **IPv4**, and fill in:
-   - **IP address**: an unused address in the same network, for example `192.168.10.200`;
+   - **IP address**: an unused address in the same network, for example `192.168.0.200`;
    - **Subnet mask**: `255.255.255.0` (or **Subnet prefix length** `24`);
-   - **Gateway**: the Default Gateway from step 1, for example `192.168.10.1`;
+   - **Gateway**: the Default Gateway from step 1, for example `192.168.0.1`;
    - **Preferred DNS**: the same gateway address, or `8.8.8.8`.
 4. Click **Save**, then check with `ipconfig` and by opening a website.
 5. Do Part 2 once with the new address. After that it no longer changes on this network.
@@ -161,7 +161,7 @@ Only do this when you know which addresses are free on that network (ask IT if y
 
 | What you see | What to do |
 | --- | --- |
-| The PC's browser cannot open `http://<server IP>/threat2026/login.php` | Check the IP again (`ipconfig` on the server); both devices on the same network; the server's network is **Private** and the firewall rule exists (`tools\check_network.ps1`); **Apache** is green in XAMPP. Try with Windows Firewall briefly turned off on the server: if it then works, the firewall rule is the problem. |
+| The PC's browser cannot open `http://192.168.0.63/threat2026/login.php` | Check the IP again (`ipconfig` on the server); both devices on the same network; the server's network is **Private** and the firewall rule exists (`tools\check_network.ps1`); **Apache** is green in XAMPP. Try with Windows Firewall briefly turned off on the server: if it then works, the firewall rule is the problem. |
 | It opens on the server with `localhost` but not with the IP | The firewall blocks it, or you used the IP of the wrong adapter. Run `tools\check_network.ps1`. |
 | Agent log shows `timed out`, `Connection refused` or `No route to host` | The agent still uses the old IP, or the network blocks it. Do Part 2, Steps 6–7. |
 | Agent log shows `CERTIFICATE_VERIFY_FAILED` after an IP change | With HTTPS, the certificate is made for one IP. Do Part 2, Step 4, and restart Apache. |

@@ -6,13 +6,13 @@
     Run in PowerShell **as Administrator**, from the folder that contains MalDetectAgent.exe
     (built with build_exe.bat) or maldetect_agent.py (needs Python on this PC):
 
-        powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://192.168.1.87/threat2026 -Token mdt_...
+        powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://192.168.0.63/threat2026 -Token mdt_...
 
     Running it again updates the agent and its settings (for example a new token or server address).
     To remove the agent, run uninstall_agent.ps1.
 
 .PARAMETER ServerUrl
-    Address of the MalDetect server, for example http://192.168.1.87/threat2026 (or https://... with -CaFile).
+    Address of the MalDetect server, for example http://192.168.0.63/threat2026 (or https://... with -CaFile).
 .PARAMETER Token
     The device token from Admin > Devices (starts with mdt_).
 .PARAMETER CaFile
@@ -45,7 +45,7 @@ if ($Token -notmatch '^mdt_[0-9a-f]{64}$') {
 }
 $ServerUrl = $ServerUrl.TrimEnd('/')
 if ($ServerUrl -notmatch '^https?://') {
-    throw 'ServerUrl must start with http:// or https://, for example http://192.168.1.87/threat2026'
+    throw 'ServerUrl must start with http:// or https://, for example http://192.168.0.63/threat2026'
 }
 
 if (-not $CaFile -and $ServerUrl -like 'https://*' -and (Test-Path (Join-Path $SourceDir 'maldetect-ca.crt'))) {

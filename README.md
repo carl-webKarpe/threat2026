@@ -85,7 +85,7 @@ The public API allows **4 requests per minute**, so MalDetect:
 
 The PCs must be able to open `http://<server-ip>/threat2026/` in a browser.
 
-- Find the server IP with `ipconfig` (Windows), for example `192.168.1.10`.
+- Find the server IP with `ipconfig` (Windows), for example `192.168.0.63`.
 - Allow Apache through the Windows Firewall (Inbound rule, TCP port 80, or 443 for HTTPS).
 - Use HTTPS if devices connect over an untrusted network, because the device token travels with each request.
 
@@ -102,7 +102,7 @@ cd agent
 copy config.example.json config.json      (on macOS/Linux: cp config.example.json config.json)
 ```
 
-Edit `config.json` and set `server_url` (for example `http://192.168.1.10/threat2026`) and `device_token`. Then run:
+Edit `config.json` and set `server_url` (for example `http://192.168.0.63/threat2026`) and `device_token`. Then run:
 
 ```text
 python maldetect_agent.py

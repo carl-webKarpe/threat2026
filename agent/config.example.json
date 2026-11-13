@@ -1,5 +1,5 @@
 {
-    "server_url": "http://192.168.1.10/threat2026",
+    "server_url": "http://192.168.0.63/threat2026",
     "device_token": "mdt_paste_the_token_from_Admin_Devices_here",
     "watch_dirs": [],
     "poll_seconds": 5,

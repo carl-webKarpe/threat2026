@@ -8,7 +8,7 @@ For installing the server and the database, see [SETUP-GUIDE.md](SETUP-GUIDE.md)
 
 | Word | Meaning |
 | --- | --- |
-| **Server** | The PC that runs XAMPP and MySQL (here: Laptop 1, IP `192.168.1.87`). Admins open the website here. |
+| **Server** | The PC that runs XAMPP and MySQL (here: Laptop 1, IP `192.168.0.63`). Admins open the website here. |
 | **Monitored PC** | A lab PC or laptop whose downloads are watched (here: Laptop 2). |
 | **Agent** | The small program on each monitored PC. It reports every new download, and file activity in the user's folders, to the server. |
 | **Device** | A monitored PC as registered on the **Devices** page. |
@@ -21,7 +21,7 @@ For installing the server and the database, see [SETUP-GUIDE.md](SETUP-GUIDE.md)
 Do this on the **server**, once per monitored PC.
 
 **Step 1. Open MalDetect and sign in.**
-On the server, open `http://localhost/threat2026/login.php` (or `https://192.168.1.87/threat2026/login.php` if HTTPS is set up). Sign in with an **Admin** account.
+On the server, open `http://localhost/threat2026/login.php` (or `https://192.168.0.63/threat2026/login.php` if HTTPS is set up). Sign in with an **Admin** account.
 
 **Step 2. Open the Devices page.**
 Click **Devices** in the left sidebar.
@@ -44,7 +44,7 @@ Select the whole token (from `mdt_` to the end), copy it, and paste it into Note
 In the agent config, `server_url` must be the address the monitored PC uses to reach the server, with the **server's IP**, not `localhost`. For example:
 
 ```text
-http://192.168.1.87/threat2026
+http://192.168.0.63/threat2026
 ```
 
 Find the server's IP with `ipconfig` (look for **IPv4 Address**), or run `tools\check_network.ps1`. When the server moves to another network (other Wi-Fi, LAN cable, hotspot) its IP changes: see [NETWORK-GUIDE.md](NETWORK-GUIDE.md). Use `https://` instead if you set up HTTPS (SETUP-GUIDE.md, Change 15).
@@ -77,7 +77,7 @@ Copy the **whole `dist` folder** to a USB drive. Then on **each** monitored PC:
 
    ```powershell
    cd E:\dist
-   powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://192.168.1.87/threat2026 -Token mdt_PASTE_THE_TOKEN
+   powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://192.168.0.63/threat2026 -Token mdt_PASTE_THE_TOKEN
    ```
 
 3. Wait for **MalDetect agent installed.** The agent now runs hidden and starts again automatically every time someone logs in.
@@ -233,7 +233,7 @@ The Superadmin can open **File Activity** to review it (including the busiest li
 
 | What you see | What to do |
 | --- | --- |
-| Device stays **○ Offline** | On the PC: is the agent running? (Way A: open `C:\MalDetectAgent\agent.log`; Way B: is the window still open?) Can the PC open `http://<server IP>/threat2026/login.php` in its browser? If not, check that both PCs are on the same network and the server's firewall rule (SETUP-GUIDE.md, Part 4). |
+| Device stays **○ Offline** | On the PC: is the agent running? (Way A: open `C:\MalDetectAgent\agent.log`; Way B: is the window still open?) Can the PC open `http://192.168.0.63/threat2026/login.php` in its browser? If not, check that both PCs are on the same network and the server's firewall rule (SETUP-GUIDE.md, Part 4). |
 | Agent says `HTTP 401` / *server rejected this device's token* | The device was deleted, disabled or got a new token. On **Devices**: click **Enable**, or **New token** and install it again. |
 | `python is not recognized` | Install Python and tick **Add python.exe to PATH**, then open a new PowerShell. Or use the installer (Way A). |
 | Agent says `Config file not found` | Run it from the folder that contains `config.json`, or create `config.json` from `config.example.json`. |

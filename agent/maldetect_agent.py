@@ -49,7 +49,7 @@ AGENT_VERSION = "1.4.1"
 PARTIAL_DOWNLOAD_SUFFIXES = {".crdownload", ".part", ".partial", ".tmp", ".download", ".opdownload", ".!ut"}
 
 DEFAULT_CONFIG = {
-    "server_url": "http://192.168.1.10/threat2026",
+    "server_url": "http://192.168.0.63/threat2026",
     "device_token": "",
     "watch_dirs": [],  # empty = the user's Downloads folder
     "poll_seconds": 5,

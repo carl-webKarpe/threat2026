@@ -6,7 +6,7 @@
     Run once on the server PC in PowerShell **as Administrator**:
 
         cd C:\xampp1\htdocs\threat2026
-        powershell -ExecutionPolicy Bypass -File .\tools\setup_https.ps1 -ServerIp 192.168.1.87
+        powershell -ExecutionPolicy Bypass -File .\tools\setup_https.ps1 -ServerIp 192.168.0.63
 
     What it does:
       1. Creates a private "MalDetect Local CA" (only the first time; kept in apache\conf\maldetect-ca).
@@ -21,7 +21,7 @@
     (only their server_url needs the new IP).
 
 .PARAMETER ServerIp
-    The server's LAN IPv4 address (ipconfig > IPv4 Address), for example 192.168.1.87.
+    The server's LAN IPv4 address (ipconfig > IPv4 Address), for example 192.168.0.63.
 .PARAMETER XamppDir
     The XAMPP folder. Default: the folder three levels above this script (htdocs\threat2026\tools).
 #>
@@ -35,7 +35,7 @@ $onWindows = $env:OS -eq 'Windows_NT'
 function Write-Step([string]$Text) { Write-Host "==> $Text" -ForegroundColor Cyan }
 
 if ($ServerIp -notmatch '^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$' -or ($Matches[1..4] | Where-Object { [int]$_ -gt 255 })) {
-    throw "ServerIp must be an IPv4 address such as 192.168.1.87 (see ipconfig). Got: $ServerIp"
+    throw "ServerIp must be an IPv4 address such as 192.168.0.63 (see ipconfig). Got: $ServerIp"
 }
 if ($onWindows) {
     $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
