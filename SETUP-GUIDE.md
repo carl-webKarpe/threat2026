@@ -844,7 +844,9 @@ With Python (Way B), copy the new `maldetect_agent.py` and `file_activity.py` an
 
 ### Change 21: Server address 192.168.0.63 in all guides
 
-**What changed:** the server's address in the guides, the examples and `agent\config.example.json` is now **`192.168.0.63`**, so every command can be copied as it is. Nothing in MalDetect itself depends on the IP. The agents already installed keep their old address until you change it (Step 3).
+**What changed:** the server's address in the guides, the examples and `agent\config.example.json` is now **`192.168.0.63`**, so every command can be copied as it is. The agents already installed keep their old address until you change it (Step 3).
+
+New setting **`config\server.php`**: the server's address as the monitored PCs reach it, `http://192.168.0.63/threat2026`. The **Devices** page uses it: after **Register Device** (or **New token**) the green box now shows a ready-to-copy **install command** and agent config with this address, even when you opened MalDetect as `localhost`. If the server's IP changes later, do not edit the code: copy `config\server.local.example.php` to `config\server.local.php` and put the new address in it (NETWORK-GUIDE.md, Part 2).
 
 **SQL to run:** none.
 

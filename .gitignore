@@ -1,4 +1,5 @@
 /config/scanner.local.php
+/config/server.local.php
 /config/mail.local.php
 /config/database.local.php
 /vendor/

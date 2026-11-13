@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../auth/role_check.php';
 require_once __DIR__ . '/../auth/csrf.php';
 require_once __DIR__ . '/../config/agents.php';
+require_once __DIR__ . '/../config/server.php';
 require_role('admin');
 
 $pdo = database_connection();
@@ -178,8 +179,8 @@ $scanStatus = static function (?array $command): array {
     };
 };
 
-$serverUrl = (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off' ? 'https' : 'http')
-    . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . rtrim(dirname(dirname((string) $_SERVER['SCRIPT_NAME'])), '/\\');
+// The address the monitored PCs use (config/server.php), not the one in this browser, which may be localhost.
+$serverUrl = maldetect_server_url();
 $h = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 $pageTitle = 'Devices';
 $currentPage = 'devices';
@@ -201,7 +202,9 @@ require_once __DIR__ . '/../includes/header.php';
 				<p class="mono text-xs tracking-[.18em] text-emerald-300">DEVICE TOKEN FOR <?= $h(strtoupper($newToken['name'])) ?></p>
 				<p class="mt-2 text-sm text-slate-300">Copy it now. It is shown only once; if it is lost, use "New token".</p>
 				<pre class="mt-4 overflow-x-auto rounded-xl bg-slate-950/80 p-4 font-mono text-xs text-emerald-200"><?= $h($newToken['token']) ?></pre>
-				<p class="mt-4 text-sm text-slate-400">Agent config (<code>agent/config.json</code> on that PC):</p>
+				<p class="mt-4 text-sm text-slate-400">Install command (on that PC, in PowerShell as Administrator, inside the copied <code>dist</code> folder):</p>
+				<pre class="mt-2 overflow-x-auto rounded-xl bg-slate-950/80 p-4 font-mono text-xs text-slate-200">powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl <?= $h($serverUrl) ?> -Token <?= $h($newToken['token']) ?></pre>
+				<p class="mt-4 text-sm text-slate-400">Or the agent config (<code>config.json</code> on that PC, when the agent runs with Python):</p>
 				<pre class="mt-2 overflow-x-auto rounded-xl bg-slate-950/80 p-4 font-mono text-xs text-slate-200"><?= $h(json_encode(['server_url' => $serverUrl, 'device_token' => $newToken['token']], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
 			</section>
 		<?php endif; ?>

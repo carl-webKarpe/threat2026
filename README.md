@@ -50,6 +50,8 @@ You can run the script again safely. It keeps existing tables and accounts.
 | `phase13_file_activity.sql` | `file_activity_events`, monitored-folder columns on `devices` |
 | `phase14_activity_ignore.sql` | `devices.activity_ignore` (files and folders left out of file activity) |
 
+The server address shown to the monitored PCs (Devices page) is `http://192.168.0.63/threat2026`, set in `config/server.php`; override it in `config/server.local.php` or with `MALDETECT_SERVER_URL`.
+
 PHP connects with `127.0.0.1:3306`, database `maldetect_db`, user `root` and an empty password by default. If you use other values, set these environment variables: `MALDETECT_DB_HOST`, `MALDETECT_DB_PORT`, `MALDETECT_DB_NAME`, `MALDETECT_DB_USER`, `MALDETECT_DB_PASSWORD`.
 
 ## Local test accounts

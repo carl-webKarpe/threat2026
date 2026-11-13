@@ -84,6 +84,15 @@ powershell -ExecutionPolicy Bypass -File .\tools\setup_https.ps1 -ServerIp 192.1
 
 Then in the XAMPP Control Panel click **Stop** and **Start** next to **Apache**. The MalDetect CA stays the same, so the PCs keep their `maldetect-ca.crt`.
 
+**Step 4b. Tell MalDetect its new address** (used on the **Devices** page in the install command and agent config for new PCs). Create `config\server.local.php` (copy `config\server.local.example.php`) with the new IP:
+
+```php
+<?php
+return ['server_url' => 'http://192.168.0.63/threat2026'];
+```
+
+Without this file MalDetect uses `http://192.168.0.63/threat2026` from `config\server.php`. Agents already installed are changed in Step 7.
+
 **Step 5. Check the website.** On the server, open `http://192.168.0.63/threat2026/login.php` (with the new IP). The login page should open.
 
 ### On every monitored PC
