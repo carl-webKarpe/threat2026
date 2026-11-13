@@ -27,8 +27,9 @@
 #>
 param(
     # The MalDetect server's address. Change it here if the server gets another IP.
-    [string]$ServerUrl = 'http://192.168.0.63/threat2026',
-    [string]$Token = '',
+    [Parameter(Position = 1)][string]$ServerUrl = 'http://192.168.0.63/threat2026',
+    # Position 0: the token also works without writing -Token in front of it.
+    [Parameter(Position = 0)][string]$Token = '',
     [string]$CaFile = '',
     [string]$InstallDir = 'C:\MalDetectAgent'
 )
@@ -46,6 +47,8 @@ if (-not $isAdmin) {
     throw 'Please run PowerShell as Administrator (right-click PowerShell > Run as administrator), then run this script again.'
 }
 $Token = $Token.Trim()
+# Swapped by mistake (token given where the server address goes): put them in the right place.
+if ($ServerUrl -like 'mdt_*' -and -not $Token) { $Token = $ServerUrl.Trim(); $ServerUrl = 'http://192.168.0.63/threat2026' }
 $existingConfig = Join-Path $InstallDir 'config.json'
 if (-not $Token -and (Test-Path $existingConfig)) {
     # Already installed: keep this PC's token (the agent is only being updated).
