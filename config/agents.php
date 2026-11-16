@@ -386,9 +386,9 @@ function agent_send_threat_alert(PDO $pdo, int $detectionId): void
         $color = $detection['scan_result'] === 'MALICIOUS' ? '#dc2626' : '#d97706';
         $html = '<div style="font-family:Arial,sans-serif;max-width:600px">'
             . '<h2 style="color:' . $color . ';margin:0 0 8px">' . $h($detection['risk_level']) . ' file detected</h2>'
-            . '<p style="color:#334155;margin:0 0 16px">JunMalware found a dangerous file on <strong>' . $h($detection['device_name']) . '</strong>.</p>'
+            . '<p style="color:#334155;margin:0 0 16px">MalDetect found a dangerous file on <strong>' . $h($detection['device_name']) . '</strong>.</p>'
             . '<table style="border-collapse:collapse;font-size:14px">' . $htmlRows . '</table>'
-            . ($detailsUrl !== null ? '<p style="margin-top:20px"><a href="' . $h($detailsUrl) . '" style="color:#7c3aed">Open the detection in JunMalware</a></p>' : '')
+            . ($detailsUrl !== null ? '<p style="margin-top:20px"><a href="' . $h($detailsUrl) . '" style="color:#7c3aed">Open the detection in MalDetect</a></p>' : '')
             . '<p style="color:#94a3b8;font-size:12px;margin-top:24px">The link and URLs above come from the monitored device. Do not open the file or the download link.</p></div>';
 
         $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
@@ -408,9 +408,9 @@ function agent_send_threat_alert(PDO $pdo, int $detectionId): void
             $mail->addBCC($recipient['email'], (string) $recipient['name']);
         }
         $mail->isHTML(true);
-        $mail->Subject = 'JunMalware alert: ' . $detection['risk_level'] . ' file on ' . $detection['device_name'];
+        $mail->Subject = 'MalDetect alert: ' . $detection['risk_level'] . ' file on ' . $detection['device_name'];
         $mail->Body = $html;
-        $mail->AltBody = "JunMalware found a dangerous file.\n\n" . $textRows . ($detailsUrl !== null ? "\nDetails: {$detailsUrl}\n" : '');
+        $mail->AltBody = "MalDetect found a dangerous file.\n\n" . $textRows . ($detailsUrl !== null ? "\nDetails: {$detailsUrl}\n" : '');
         $mail->send();
     } catch (Throwable $exception) {
         error_log("Threat alert email for detection #{$detectionId} failed: " . $exception->getMessage());

@@ -1,34 +1,22 @@
-/* Landing page (index.php), dark "modern tech" style. The rest of the system uses includes/theme_styles.php. */
+/* Landing page (index.php). The rest of the system uses includes/theme_styles.php. */
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; overflow-x: hidden; font-family: Inter, system-ui, sans-serif; background: #07070b; }
-.font-display { font-family: Michroma, Inter, sans-serif; }
-::selection { color: #fff; background: #2b3bff; }
+body { margin: 0; overflow-x: hidden; font-family: Inter, system-ui, sans-serif; }
+::selection { color: #0f172a; background: #bfdbfe; }
 
-.site-nav { transition: background-color .3s ease, border-color .3s ease; }
-.site-nav.is-scrolled { background: rgba(7, 7, 11, .85); border-color: rgba(255, 255, 255, .08); backdrop-filter: blur(14px); }
+.site-nav { transition: background-color .3s ease, border-color .3s ease, box-shadow .3s ease; }
+.site-nav.is-scrolled { background: rgba(255, 255, 255, .92); border-color: #e2e8f0; box-shadow: 0 6px 24px rgba(15, 23, 42, .06); backdrop-filter: blur(14px); }
 
-.hero-bg { background: radial-gradient(ellipse at 70% 45%, rgba(43, 59, 255, .16), transparent 45%), radial-gradient(circle at 15% 85%, rgba(143, 152, 255, .06), transparent 35%), #07070b; }
-.hero-grid { background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px); background-size: 64px 64px; mask-image: radial-gradient(ellipse at 60% 40%, black, transparent 75%); }
+.hero-bg { background: radial-gradient(circle at 80% 20%, rgba(37, 99, 235, .10), transparent 40%), radial-gradient(circle at 10% 80%, rgba(14, 165, 233, .08), transparent 35%), #f8fafc; }
+.hero-grid { background-image: linear-gradient(rgba(37, 99, 235, .06) 1px, transparent 1px), linear-gradient(90deg, rgba(37, 99, 235, .06) 1px, transparent 1px); background-size: 56px 56px; mask-image: linear-gradient(to bottom, black, transparent 85%); }
 
-/* Shield and scanner graphic in the hero. */
-.scanner { position: relative; width: min(78vw, 440px); aspect-ratio: 1; display: grid; place-items: center; }
-.scanner .ring { position: absolute; border-radius: 50%; border: 1px solid rgba(143, 152, 255, .18); }
-.scanner .ring.r1 { inset: 0; border-top-color: #2b3bff; animation: spin 16s linear infinite; }
-.scanner .ring.r2 { inset: 12%; border-right-color: rgba(143, 152, 255, .7); animation: spin 22s linear infinite reverse; }
-.scanner .ring.r3 { inset: 26%; border-style: dashed; border-color: rgba(255,255,255,.12); }
-.scanner .core { position: relative; width: 38%; aspect-ratio: .86; clip-path: polygon(50% 0, 92% 16%, 87% 66%, 50% 100%, 13% 66%, 8% 16%); background: linear-gradient(160deg, #2b3bff, #11135a 75%); box-shadow: 0 0 60px rgba(43, 59, 255, .6); display: grid; place-items: center; overflow: hidden; }
-.scanner .core::after { content: ''; position: absolute; left: 0; right: 0; height: 2px; background: rgba(255,255,255,.85); box-shadow: 0 0 16px 3px rgba(143,152,255,.9); animation: scan 3.2s ease-in-out infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes scan { 0%, 100% { top: 12%; opacity: 0; } 15%, 85% { opacity: 1; } 50% { top: 85%; } }
-
-.feature-card { transition: transform .25s ease, border-color .25s ease, background-color .25s ease; }
-.feature-card:hover { transform: translateY(-4px); border-color: rgba(43, 59, 255, .6); background: rgba(43, 59, 255, .06); }
+.feature-card { transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+.feature-card:hover { transform: translateY(-4px); border-color: #93c5fd; box-shadow: 0 12px 30px rgba(15, 23, 42, .08); }
 /* Sections fade in on scroll, only when the script runs (html.js), so they are never hidden without it. */
 .js .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
 .js .reveal.is-visible { opacity: 1; transform: translateY(0); }
 
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
-    .js .reveal { opacity: 1; transform: none; }
+    .reveal { opacity: 1; transform: none; }
 }

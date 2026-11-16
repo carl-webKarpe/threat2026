@@ -36,26 +36,26 @@ $sidebarInitials = strtoupper(implode('', array_map(
 ))) ?: 'MD';
 $sidebarH = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 ?>
-<aside class="no-print flex w-full shrink-0 flex-col border-b border-white/10 bg-panel lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:border-b-0 lg:border-r">
+<aside class="no-print flex w-full shrink-0 flex-col border-b border-slate-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:border-b-0 lg:border-r">
     <a href="<?= $sidebarH($sidebarHome) ?>" class="flex items-center gap-3 px-5 py-5">
-        <span class="grid h-10 w-10 place-items-center rounded-lg bg-accent text-white shadow-lg shadow-accent/40">
+        <span class="grid h-10 w-10 place-items-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-600/30">
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
         </span>
-        <span class="leading-tight"><span class="block font-display text-sm uppercase tracking-[.12em] text-white">JunMalware</span><span class="mt-0.5 block text-[10px] uppercase tracking-[.25em] text-neutral-500"><?= $sidebarH($sidebarWorkspace) ?></span></span>
+        <span class="leading-tight"><span class="block text-base font-bold tracking-tight text-slate-900">MalDetect</span><span class="block text-xs text-slate-500"><?= $sidebarH($sidebarWorkspace) ?></span></span>
     </a>
     <nav class="grid gap-1 px-3 pb-4 sm:grid-cols-4 lg:block lg:flex-1 lg:space-y-1 lg:overflow-y-auto" aria-label="<?= $sidebarH($sidebarWorkspace) ?> navigation">
         <?php foreach ($sidebarLinks as $key => [$label, $href]): ?>
             <?php $active = ($currentPage ?? '') === $key; ?>
-            <a class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition <?= $active ? 'bg-accent/15 text-white shadow-[inset_3px_0_0_#2b3bff]' : 'text-neutral-400 hover:bg-white/5 hover:text-white' ?>" href="<?= $sidebarH($href) ?>"<?= $active ? ' aria-current="page"' : '' ?>>
-                <span class="<?= $active ? 'text-accent-light' : 'text-neutral-500' ?>"><?= sidebar_icon($key) ?></span><?= $sidebarH($label) ?>
+            <a class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition <?= $active ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' ?>" href="<?= $sidebarH($href) ?>"<?= $active ? ' aria-current="page"' : '' ?>>
+                <span class="<?= $active ? 'text-blue-600' : 'text-slate-400' ?>"><?= sidebar_icon($key) ?></span><?= $sidebarH($label) ?>
             </a>
         <?php endforeach; ?>
     </nav>
-    <div class="border-t border-white/10 p-3">
+    <div class="border-t border-slate-200 p-3">
         <div class="flex items-center gap-3 rounded-lg px-2 py-2">
-            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/5 text-xs font-bold text-neutral-300"><?= $sidebarH($sidebarInitials) ?></span>
-            <span class="min-w-0 leading-tight"><span class="block truncate text-sm font-semibold text-white"><?= $sidebarH($sidebarName) ?></span><span class="block text-xs capitalize text-neutral-400"><?= $sidebarH((string) ($user['role'] ?? '')) ?></span></span>
+            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-100 text-xs font-bold text-slate-700"><?= $sidebarH($sidebarInitials) ?></span>
+            <span class="min-w-0 leading-tight"><span class="block truncate text-sm font-semibold text-slate-900"><?= $sidebarH($sidebarName) ?></span><span class="block text-xs capitalize text-slate-500"><?= $sidebarH((string) ($user['role'] ?? '')) ?></span></span>
         </div>
-        <form method="post" action="../logout.php" class="mt-1"><input type="hidden" name="csrf_token" value="<?= $sidebarH(csrf_token()) ?>"><button class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-neutral-400 transition hover:bg-red-500/10 hover:text-red-300" type="submit"><span class="text-neutral-500"><?= sidebar_icon('logout') ?></span>Logout</button></form>
+        <form method="post" action="../logout.php" class="mt-1"><input type="hidden" name="csrf_token" value="<?= $sidebarH(csrf_token()) ?>"><button class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-slate-600 transition hover:bg-red-50 hover:text-red-700" type="submit"><span class="text-slate-400"><?= sidebar_icon('logout') ?></span>Logout</button></form>
     </div>
 </aside>
