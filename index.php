@@ -15,7 +15,7 @@ $layoutPath = __DIR__ . '/resources/views/layouts/app.blade.php';
 
 if (!is_file($viewPath) || !is_file($layoutPath)) {
     http_response_code(500);
-    exit('MalDetect landing page files are missing.');
+    exit('JunMalware landing page files are missing.');
 }
 
 $view = file_get_contents($viewPath);

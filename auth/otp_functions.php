@@ -183,7 +183,7 @@ function sendSuperadminOtp(
         $mail->isHTML(true);
 
         $mail->Subject =
-            'MalDetect Superadmin Verification Code';
+            'JunMalware Superadmin Verification Code';
 
         $safeName = htmlspecialchars(
             $name ?: 'Superadmin',
@@ -202,7 +202,7 @@ function sendSuperadminOtp(
             <html>
             <head>
                 <meta charset='UTF-8'>
-                <title>MalDetect Verification Code</title>
+                <title>JunMalware Verification Code</title>
             </head>
 
             <body style='
@@ -225,7 +225,7 @@ function sendSuperadminOtp(
                         margin-top:0;
                         color:#ffffff;
                     '>
-                        MalDetect
+                        JunMalware
                     </h1>
 
                     <p style='color:#cbd5e1;'>
@@ -261,7 +261,7 @@ function sendSuperadminOtp(
                     </p>
 
                     <p style='color:#94a3b8;font-size:14px;'>
-                        If you did not attempt to sign in to MalDetect,
+                        If you did not attempt to sign in to JunMalware,
                         please ignore this email and review your account
                         security.
                     </p>
@@ -276,7 +276,7 @@ function sendSuperadminOtp(
                         color:#64748b;
                         font-size:12px;
                     '>
-                        MalDetect Security System
+                        JunMalware Security System
                     </p>
 
                 </div>
@@ -287,11 +287,11 @@ function sendSuperadminOtp(
 
         // Plain-text fallback.
         $mail->AltBody =
-            "MalDetect Superadmin Verification Code\n\n" .
+            "JunMalware Superadmin Verification Code\n\n" .
             "Hello {$name},\n\n" .
             "Your verification code is: {$otp}\n\n" .
             "This code expires in 5 minutes.\n\n" .
-            "MalDetect Security System";
+            "JunMalware Security System";
 
         $mail->send();
 
@@ -306,13 +306,13 @@ function sendSuperadminOtp(
             $delete->execute([$otpId]);
         } catch (Throwable $cleanupError) {
             error_log(
-                'MalDetect OTP cleanup error: ' . $cleanupError->getMessage()
+                'JunMalware OTP cleanup error: ' . $cleanupError->getMessage()
             );
         }
 
         // Log technical error on server only.
         error_log(
-            'MalDetect OTP email error: ' . $e->getMessage()
+            'JunMalware OTP email error: ' . $e->getMessage()
         );
 
         throw new RuntimeException(

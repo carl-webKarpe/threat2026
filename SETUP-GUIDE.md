@@ -904,6 +904,26 @@ The token must belong to **this** server's database. After moving the server to 
 
 The pages need internet access for their styles and font (Tailwind CSS and Google Fonts), the same as before. Without internet the pages still work, but look unstyled.
 
+### Change 24: New name JunMalware and a dark "modern tech" design
+
+**What changed** (only the name and the look; every feature, page, permission and setting works as before):
+
+- The system is now called **JunMalware** on every page, in page titles, and in the alert and verification-code emails.
+- **Technical names stay the same**, so nothing has to be reinstalled: the agent program `MalDetectAgent.exe`, the folder `C:\MalDetectAgent`, the scheduled task `MalDetect Agent`, the database `maldetect_db` and the token prefix `mdt_`. The commands in this guide therefore still use those names.
+- **New design** (replaces the light design of Change 23): near-black background with a fine grid, dark panels, electric blue (#2b3bff) as the accent, and the wide Michroma font for the logo, titles and headings, in capitals with wide letter spacing.
+- **Home page and login page** in the style of the client's reference: a large **JUNMALWARE** title with a blue block behind the first letter, thin lines, small spaced-out labels, and a glowing shield-and-scanner graphic.
+- Printed reports and detection details stay white with black text.
+
+**SQL to run:** none.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Reload the browser** with **Ctrl+F5** on any page.
+
+**Step 3 (optional): the sender name of the emails.** If `config\mail.local.php` contains `'from_name' => 'MalDetect'`, change it to `'from_name' => 'JunMalware'`.
+
+The pages load their styles and fonts from the internet (Tailwind CSS and Google Fonts), the same as before.
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)

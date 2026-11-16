@@ -110,10 +110,10 @@ $icon = static function (string $name): string {
     return '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $paths[$name] . '</svg>';
 };
 $riskBadge = static fn (?string $risk): string => match ($risk) {
-    'Malicious' => 'bg-red-50 text-red-700 ring-red-200',
-    'Suspicious' => 'bg-amber-50 text-amber-700 ring-amber-200',
-    'No Threat Detected' => 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-    default => 'bg-slate-100 text-slate-600 ring-slate-200',
+    'Malicious' => 'bg-red-500/10 text-red-400 ring-red-500/30',
+    'Suspicious' => 'bg-amber-500/10 text-amber-400 ring-amber-500/30',
+    'No Threat Detected' => 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/30',
+    default => 'bg-white/5 text-neutral-400 ring-white/10',
 };
 
 $pageTitle = 'Admin Dashboard';
@@ -126,72 +126,72 @@ require_once __DIR__ . '/../includes/header.php';
     <main class="min-w-0 flex-1 p-6 sm:p-8 lg:p-10">
         <header class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
-                <p class="text-sm text-slate-500"><?= $h(date('l, F j, Y')) ?></p>
-                <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Welcome back, <?= $h(strtok($user['full_name'], ' ') ?: $user['full_name']) ?></h1>
-                <p class="mt-1 text-sm text-slate-500">Overview of your monitored devices, threats and file activity.</p>
+                <p class="text-sm text-neutral-400"><?= $h(date('l, F j, Y')) ?></p>
+                <h1 class="mt-1 font-display text-2xl uppercase tracking-[.08em] text-white sm:text-3xl">Welcome back, <?= $h(strtok($user['full_name'], ' ') ?: $user['full_name']) ?></h1>
+                <p class="mt-1 text-sm text-neutral-400">Overview of your monitored devices, threats and file activity.</p>
             </div>
             <div class="flex items-center gap-3">
-                <span data-live-indicator class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600 ring-1 ring-emerald-200">● Live</span>
-                <a href="scan.php" class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">Scan a file</a>
+                <span data-live-indicator class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400 ring-1 ring-emerald-500/30">● Live</span>
+                <a href="scan.php" class="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-accent-dark">Scan a file</a>
             </div>
         </header>
 
         <div data-live-region="dashboard">
-        <?php if ($dashboardError): ?><div class="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">Dashboard statistics are temporarily unavailable.</div><?php endif; ?>
+        <?php if ($dashboardError): ?><div class="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">Dashboard statistics are temporarily unavailable.</div><?php endif; ?>
 
         <?php if ($deviceStatistics !== null): ?>
         <section class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Endpoint summary">
             <?php foreach ([
-                ['Devices online', (int) $deviceStatistics['online'] . ' / ' . (int) $deviceStatistics['devices'], 'devices', 'bg-blue-50 text-blue-600', 'devices.php', 'Active devices reporting now'],
-                ['Downloads (24h)', (int) $deviceStatistics['downloads'], 'download', 'bg-sky-50 text-sky-600', 'detections.php', 'Files checked with VirusTotal'],
-                ['Threats (24h)', (int) $deviceStatistics['threats'], 'threat', (int) $deviceStatistics['threats'] > 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600', 'detections.php?result=MALICIOUS', 'Malicious or suspicious downloads'],
-                ['File activity (24h)', $activityToday ?? '—', 'activity', 'bg-violet-50 text-violet-600', 'activity.php', 'Created, changed, deleted, moved'],
+                ['Devices online', (int) $deviceStatistics['online'] . ' / ' . (int) $deviceStatistics['devices'], 'devices', 'bg-accent/15 text-accent-light', 'devices.php', 'Active devices reporting now'],
+                ['Downloads (24h)', (int) $deviceStatistics['downloads'], 'download', 'bg-sky-500/10 text-sky-400', 'detections.php', 'Files checked with VirusTotal'],
+                ['Threats (24h)', (int) $deviceStatistics['threats'], 'threat', (int) $deviceStatistics['threats'] > 0 ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400', 'detections.php?result=MALICIOUS', 'Malicious or suspicious downloads'],
+                ['File activity (24h)', $activityToday ?? '—', 'activity', 'bg-violet-500/10 text-violet-400', 'activity.php', 'Created, changed, deleted, moved'],
             ] as [$label, $value, $iconName, $iconClass, $link, $hint]): ?>
-                <a href="<?= $h($link) ?>" class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-300 hover:shadow">
-                    <div class="flex items-start justify-between"><p class="text-sm font-medium text-slate-500"><?= $h($label) ?></p><span class="grid h-9 w-9 place-items-center rounded-lg <?= $iconClass ?>"><?= $icon($iconName) ?></span></div>
-                    <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900"><?= $h($value) ?></p>
-                    <p class="mt-1 text-xs text-slate-400"><?= $h($hint) ?></p>
+                <a href="<?= $h($link) ?>" class="group rounded-xl border border-white/10 bg-panel p-5 shadow-sm transition hover:border-accent/70 hover:shadow-lg">
+                    <div class="flex items-start justify-between"><p class="text-sm font-medium text-neutral-400"><?= $h($label) ?></p><span class="grid h-9 w-9 place-items-center rounded-lg <?= $iconClass ?>"><?= $icon($iconName) ?></span></div>
+                    <p class="mt-3 font-display text-2xl uppercase tracking-[.08em] text-white sm:text-3xl"><?= $h($value) ?></p>
+                    <p class="mt-1 text-xs text-neutral-500"><?= $h($hint) ?></p>
                 </a>
             <?php endforeach; ?>
         </section>
 
         <section class="mt-6 grid gap-6 xl:grid-cols-3">
-            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm xl:col-span-2">
-                <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-base font-semibold text-slate-900">Downloads and threats</h2><p class="text-sm text-slate-500">Last 7 days, all devices</p></div>
-                    <div class="flex items-center gap-4 text-xs text-slate-500"><span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-sm bg-blue-500"></span>Downloads</span><span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-sm bg-red-500"></span>Threats</span></div></div>
+            <div class="rounded-xl border border-white/10 bg-panel p-6 shadow-sm xl:col-span-2">
+                <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-base font-semibold text-white">Downloads and threats</h2><p class="text-sm text-neutral-400">Last 7 days, all devices</p></div>
+                    <div class="flex items-center gap-4 text-xs text-neutral-400"><span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-sm bg-accent"></span>Downloads</span><span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-sm bg-red-500"></span>Threats</span></div></div>
                 <div class="mt-6 flex h-60 items-end gap-3" role="img" aria-label="Downloads and threats per day for the last 7 days">
                     <?php foreach ($days as $day => [$downloads, $threats]): ?>
                         <div class="flex h-full flex-1 flex-col items-center justify-end gap-2">
                             <div class="flex h-full w-full items-end justify-center gap-1" title="<?= $h(date('D, M j', strtotime($day)) . ": {$downloads} download(s), {$threats} threat(s)") ?>">
-                                <div class="w-1/3 max-w-[22px] rounded-t bg-blue-500" style="height: <?= max(2, (int) round($downloads / $maxDownloads * 100)) ?>%"></div>
+                                <div class="w-1/3 max-w-[22px] rounded-t bg-accent" style="height: <?= max(2, (int) round($downloads / $maxDownloads * 100)) ?>%"></div>
                                 <div class="w-1/3 max-w-[22px] rounded-t bg-red-500" style="height: <?= $threats > 0 ? max(2, (int) round($threats / $maxDownloads * 100)) : 0 ?>%"></div>
                             </div>
-                            <span class="text-xs text-slate-500"><?= $h(date('D', strtotime($day))) ?></span>
+                            <span class="text-xs text-neutral-400"><?= $h(date('D', strtotime($day))) ?></span>
                         </div>
                     <?php endforeach; ?>
                 </div>
             </div>
-            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="flex items-center justify-between"><div><h2 class="text-base font-semibold text-slate-900">Recent threats</h2><p class="text-sm text-slate-500">Latest on any device</p></div><a class="text-sm font-medium text-blue-600 hover:text-blue-800" href="detections.php">View all</a></div>
+            <div class="rounded-xl border border-white/10 bg-panel p-6 shadow-sm">
+                <div class="flex items-center justify-between"><div><h2 class="text-base font-semibold text-white">Recent threats</h2><p class="text-sm text-neutral-400">Latest on any device</p></div><a class="text-sm font-medium text-accent-light hover:text-white" href="detections.php">View all</a></div>
                 <?php if (!$recentThreats): ?>
-                    <div class="mt-6 rounded-lg border border-dashed border-emerald-200 bg-emerald-50 px-4 py-8 text-center text-sm text-emerald-700">No threats found. All clear.</div>
+                    <div class="mt-6 rounded-lg border border-dashed border-emerald-500/30 bg-emerald-500/10 px-4 py-8 text-center text-sm text-emerald-400">No threats found. All clear.</div>
                 <?php else: ?>
-                    <ul class="mt-4 divide-y divide-slate-100">
+                    <ul class="mt-4 divide-y divide-white/5">
                         <?php foreach ($recentThreats as $threat): ?>
-                            <li class="py-3"><div class="flex items-start justify-between gap-3"><a class="min-w-0 truncate text-sm font-semibold text-slate-900 hover:text-blue-700" href="view_detection.php?id=<?= (int) $threat['id'] ?>"><?= $h($threat['file_name']) ?></a><span class="shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ring-1 <?= $riskBadge($threat['risk_level']) ?>"><?= $h($threat['risk_level']) ?></span></div><p class="mt-0.5 truncate text-xs text-slate-500"><?= $h($threat['device_name']) ?> · <?= $h($threat['created_at']) ?><?= $threat['threat_name'] ? ' · ' . $h($threat['threat_name']) : '' ?></p></li>
+                            <li class="py-3"><div class="flex items-start justify-between gap-3"><a class="min-w-0 truncate text-sm font-semibold text-white hover:text-white" href="view_detection.php?id=<?= (int) $threat['id'] ?>"><?= $h($threat['file_name']) ?></a><span class="shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ring-1 <?= $riskBadge($threat['risk_level']) ?>"><?= $h($threat['risk_level']) ?></span></div><p class="mt-0.5 truncate text-xs text-neutral-400"><?= $h($threat['device_name']) ?> · <?= $h($threat['created_at']) ?><?= $threat['threat_name'] ? ' · ' . $h($threat['threat_name']) : '' ?></p></li>
                         <?php endforeach; ?>
                     </ul>
                 <?php endif; ?>
             </div>
         </section>
 
-        <section class="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-base font-semibold text-slate-900">File activity</h2><p class="text-sm text-slate-500">Events per day on all monitored folders</p></div><a class="text-sm font-medium text-blue-600 hover:text-blue-800" href="activity.php">Open File Activity</a></div>
+        <section class="mt-6 rounded-xl border border-white/10 bg-panel p-6 shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-base font-semibold text-white">File activity</h2><p class="text-sm text-neutral-400">Events per day on all monitored folders</p></div><a class="text-sm font-medium text-accent-light hover:text-white" href="activity.php">Open File Activity</a></div>
             <div class="mt-5 grid grid-cols-7 gap-3" role="img" aria-label="File activity events per day for the last 7 days">
                 <?php foreach ($days as $day => [, , $events]): ?>
                     <div class="text-center" title="<?= $h(date('D, M j', strtotime($day)) . ": {$events} event(s)") ?>">
-                        <div class="flex h-20 items-end justify-center rounded-lg bg-slate-50 px-2"><div class="w-full max-w-[36px] rounded-t bg-violet-500" style="height: <?= $events > 0 ? max(4, (int) round($events / $maxActivity * 100)) : 0 ?>%"></div></div>
-                        <p class="mt-2 text-sm font-semibold text-slate-900"><?= $events ?></p><p class="text-xs text-slate-500"><?= $h(date('D', strtotime($day))) ?></p>
+                        <div class="flex h-20 items-end justify-center rounded-lg bg-panel2 px-2"><div class="w-full max-w-[36px] rounded-t bg-accent" style="height: <?= $events > 0 ? max(4, (int) round($events / $maxActivity * 100)) : 0 ?>%"></div></div>
+                        <p class="mt-2 text-sm font-semibold text-white"><?= $events ?></p><p class="text-xs text-neutral-400"><?= $h(date('D', strtotime($day))) ?></p>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -199,24 +199,24 @@ require_once __DIR__ . '/../includes/header.php';
         <?php endif; ?>
 
         <section class="mt-6 grid gap-6 xl:grid-cols-3">
-            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-base font-semibold text-slate-900">Your file scans</h2><p class="text-sm text-slate-500">Files you uploaded on Scan File</p>
+            <div class="rounded-xl border border-white/10 bg-panel p-6 shadow-sm">
+                <h2 class="text-base font-semibold text-white">Your file scans</h2><p class="text-sm text-neutral-400">Files you uploaded on Scan File</p>
                 <dl class="mt-5 grid grid-cols-2 gap-3">
-                    <?php foreach ([['Total', 'total', 'text-slate-900'], ['Completed', 'completed', 'text-emerald-600'], ['Scanning', 'scanning', 'text-amber-600'], ['Failed', 'failed', 'text-slate-500'], ['Malicious', 'malicious', 'text-red-600'], ['Suspicious', 'suspicious', 'text-amber-600'], ['No threat', 'no_threat', 'text-emerald-600']] as [$label, $key, $color]): ?>
-                        <div class="rounded-lg bg-slate-50 px-3 py-2.5"><dt class="text-xs text-slate-500"><?= $h($label) ?></dt><dd class="mt-0.5 text-xl font-bold <?= $color ?>"><?= $statistics[$key] ?></dd></div>
+                    <?php foreach ([['Total', 'total', 'text-white'], ['Completed', 'completed', 'text-emerald-400'], ['Scanning', 'scanning', 'text-amber-400'], ['Failed', 'failed', 'text-neutral-400'], ['Malicious', 'malicious', 'text-red-400'], ['Suspicious', 'suspicious', 'text-amber-400'], ['No threat', 'no_threat', 'text-emerald-400']] as [$label, $key, $color]): ?>
+                        <div class="rounded-lg bg-panel2 px-3 py-2.5"><dt class="text-xs text-neutral-400"><?= $h($label) ?></dt><dd class="mt-0.5 text-xl font-bold <?= $color ?>"><?= $statistics[$key] ?></dd></div>
                     <?php endforeach; ?>
                 </dl>
             </div>
-            <div class="rounded-xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
-                <div class="flex items-center justify-between p-6 pb-4"><div><h2 class="text-base font-semibold text-slate-900">Recent scan activity</h2><p class="text-sm text-slate-500">Your last 10 uploads</p></div><a class="text-sm font-medium text-blue-600 hover:text-blue-800" href="history.php">View history</a></div>
+            <div class="rounded-xl border border-white/10 bg-panel shadow-sm xl:col-span-2">
+                <div class="flex items-center justify-between p-6 pb-4"><div><h2 class="text-base font-semibold text-white">Recent scan activity</h2><p class="text-sm text-neutral-400">Your last 10 uploads</p></div><a class="text-sm font-medium text-accent-light hover:text-white" href="history.php">View history</a></div>
                 <?php if (!$recentScans): ?>
-                    <div class="mx-6 mb-6 rounded-lg border border-dashed border-slate-200 px-6 py-10 text-center text-sm text-slate-500">No scans have been performed. <a class="font-medium text-blue-600" href="scan.php">Scan a file</a></div>
+                    <div class="mx-6 mb-6 rounded-lg border border-dashed border-white/10 px-6 py-10 text-center text-sm text-neutral-400">No scans have been performed. <a class="font-medium text-accent-light" href="scan.php">Scan a file</a></div>
                 <?php else: ?>
                     <div class="overflow-x-auto"><table class="w-full min-w-[560px] text-left text-sm">
-                        <thead class="border-y border-slate-200 text-xs font-semibold uppercase tracking-wider text-slate-500"><tr><th class="px-6 py-3">File</th><th class="px-6 py-3">Status</th><th class="px-6 py-3">Result</th><th class="px-6 py-3">Date</th><th class="px-6 py-3"></th></tr></thead>
-                        <tbody class="divide-y divide-slate-100">
+                        <thead class="border-y border-white/10 text-xs font-semibold uppercase tracking-wider text-neutral-400"><tr><th class="px-6 py-3">File</th><th class="px-6 py-3">Status</th><th class="px-6 py-3">Result</th><th class="px-6 py-3">Date</th><th class="px-6 py-3"></th></tr></thead>
+                        <tbody class="divide-y divide-white/5">
                             <?php foreach ($recentScans as $scan): ?>
-                                <tr class="hover:bg-slate-50"><td class="max-w-[220px] truncate px-6 py-3 font-medium text-slate-900"><?= $h($scan['original_filename']) ?></td><td class="px-6 py-3 text-slate-600"><?= $h(ucfirst($scan['scan_status'])) ?></td><td class="px-6 py-3"><span class="whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ring-1 <?= $riskBadge($scan['risk_level']) ?>"><?= $h($scan['risk_level'] ?: 'Pending') ?></span></td><td class="whitespace-nowrap px-6 py-3 text-slate-500"><?= $h($scan['created_at']) ?></td><td class="px-6 py-3 text-right"><a class="font-medium text-blue-600 hover:text-blue-800" href="view_scan.php?id=<?= (int) $scan['id'] ?>">View</a></td></tr>
+                                <tr class="hover:bg-white/5"><td class="max-w-[220px] truncate px-6 py-3 font-medium text-white"><?= $h($scan['original_filename']) ?></td><td class="px-6 py-3 text-neutral-400"><?= $h(ucfirst($scan['scan_status'])) ?></td><td class="px-6 py-3"><span class="whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ring-1 <?= $riskBadge($scan['risk_level']) ?>"><?= $h($scan['risk_level'] ?: 'Pending') ?></span></td><td class="whitespace-nowrap px-6 py-3 text-neutral-400"><?= $h($scan['created_at']) ?></td><td class="px-6 py-3 text-right"><a class="font-medium text-accent-light hover:text-white" href="view_scan.php?id=<?= (int) $scan['id'] ?>">View</a></td></tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table></div>

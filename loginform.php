@@ -25,60 +25,54 @@ $loginCsrfToken = csrf_token();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Secure login for MalDetect intelligent malicious software detection.">
-    <meta name="theme-color" content="#2563eb">
-    <title>Sign in | MalDetect</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } } };</script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <?php require __DIR__ . '/includes/theme_styles.php'; ?>
-    <style>.brand-panel { background: linear-gradient(150deg, #1d4ed8 0%, #2563eb 45%, #0ea5e9 100%); } .brand-grid { background-image: linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px); background-size: 40px 40px; }</style>
+    <meta name="description" content="Secure login for JunMalware intelligent malicious software detection.">
+    <meta name="theme-color" content="#07070b">
+    <title>Sign in | JunMalware</title>
+    <?php require __DIR__ . '/includes/theme_head.php'; ?>
 </head>
-<body class="shell min-h-screen text-slate-800 antialiased">
-    <main class="grid min-h-screen lg:grid-cols-2">
-        <section class="brand-panel relative hidden overflow-hidden p-12 text-white lg:flex lg:flex-col lg:justify-between xl:p-16" aria-label="About MalDetect">
-            <div class="brand-grid pointer-events-none absolute inset-0"></div>
-            <a href="index.php" class="relative flex items-center gap-3" aria-label="Back to MalDetect homepage">
-                <span class="grid h-10 w-10 place-items-center rounded-xl bg-white/15 ring-1 ring-white/30"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
-                <span class="text-lg font-bold tracking-tight">MalDetect</span>
-            </a>
-            <div class="relative max-w-lg">
-                <h1 class="text-4xl font-extrabold leading-tight tracking-tight xl:text-5xl">Malicious software detection for your computer lab.</h1>
-                <p class="mt-5 text-base leading-7 text-blue-50">Every download on your monitored PCs is checked with VirusTotal, and file activity is recorded in real time. Results appear here, on the server only.</p>
-                <ul class="mt-8 space-y-3 text-sm text-blue-50">
-                    <li class="flex items-center gap-3"><span class="grid h-6 w-6 place-items-center rounded-full bg-white/15">✓</span>Downloads checked by dozens of antivirus engines (VirusTotal)</li>
-                    <li class="flex items-center gap-3"><span class="grid h-6 w-6 place-items-center rounded-full bg-white/15">✓</span>Live file activity: created, renamed, moved, deleted</li>
-                    <li class="flex items-center gap-3"><span class="grid h-6 w-6 place-items-center rounded-full bg-white/15">✓</span>Email alerts and reports for administrators</li>
-                </ul>
+<body class="shell min-h-screen text-neutral-200 antialiased">
+    <main class="relative mx-auto grid min-h-screen max-w-7xl items-center gap-12 px-6 py-10 lg:grid-cols-[1.15fr_.85fr] lg:px-12">
+        <header class="absolute inset-x-6 top-6 flex items-center justify-between lg:inset-x-12">
+            <a href="index.php" class="font-display text-sm uppercase tracking-[.3em] text-white">Jun<span class="text-accent-light">M</span>alware</a>
+            <span class="hidden items-center gap-2 text-[11px] uppercase tracking-[.25em] text-neutral-500 sm:flex"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>System online</span>
+        </header>
+        <section class="hidden lg:block" aria-label="About JunMalware">
+            <p class="text-xs uppercase tracking-[.4em] text-neutral-400">Malware detection system</p>
+            <h1 class="relative isolate mt-5 font-display text-6xl uppercase leading-none tracking-[.12em] text-white xl:text-7xl"><span class="relative inline-block"><span class="absolute -inset-y-3 -left-4 right-[-.15em] -z-10 bg-accent" aria-hidden="true"></span>J</span>un<br>Malware</h1>
+            <div class="mt-10 flex max-w-md gap-5">
+                <span class="mt-1 h-16 w-px shrink-0 bg-white/20" aria-hidden="true"></span>
+                <p class="text-sm leading-7 text-neutral-400">Every download on your monitored PCs is checked with VirusTotal, and file activity is recorded in real time. Results appear on this server only.</p>
             </div>
-            <p class="relative text-xs text-blue-100">Intelligent Malicious Software Detection System</p>
+            <dl class="mt-14 grid max-w-lg grid-cols-3 gap-6 border-t border-white/10 pt-6">
+                <div><dt class="text-[10px] uppercase tracking-[.25em] text-neutral-500">01 / Scan</dt><dd class="mt-2 text-sm text-neutral-200">VirusTotal checks</dd></div>
+                <div><dt class="text-[10px] uppercase tracking-[.25em] text-neutral-500">02 / Watch</dt><dd class="mt-2 text-sm text-neutral-200">Live file activity</dd></div>
+                <div><dt class="text-[10px] uppercase tracking-[.25em] text-neutral-500">03 / Alert</dt><dd class="mt-2 text-sm text-neutral-200">Email and reports</dd></div>
+            </dl>
         </section>
-        <section class="flex items-center justify-center px-6 py-12 sm:px-12">
-            <div class="w-full max-w-sm">
-                <a href="index.php" class="mb-10 flex items-center gap-3 lg:hidden"><span class="grid h-9 w-9 place-items-center rounded-lg bg-blue-600 text-white"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span><span class="text-lg font-bold text-slate-900">MalDetect</span></a>
-                <h2 class="text-2xl font-bold tracking-tight text-slate-900">Sign in</h2>
-                <p class="mt-2 text-sm text-slate-500">Welcome back. Enter your account details to continue.</p>
-                <?php if ($error !== ''): ?><div class="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
-                <form class="mt-8 space-y-5" method="post" action="auth/login_process.php"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars($loginCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
+        <section class="w-full pt-16 lg:pt-0">
+            <div class="mx-auto w-full max-w-sm rounded-2xl border border-white/10 bg-panel/80 p-8 shadow-2xl shadow-black/50 backdrop-blur">
+                <p class="text-[11px] uppercase tracking-[.3em] text-accent-light">Secure access</p>
+                <h2 class="mt-3 font-display text-xl uppercase tracking-[.1em] text-white">Sign in</h2>
+                <p class="mt-2 text-sm text-neutral-400">Enter your account details to continue.</p>
+                <?php if ($error !== ''): ?><div class="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300" role="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
+                <form class="mt-7 space-y-5" method="post" action="auth/login_process.php"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars($loginCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700" for="username">Username</label>
-                        <input class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15" id="username" name="username" type="text" value="<?= htmlspecialchars($username, ENT_QUOTES, 'UTF-8') ?>" autocomplete="username" required autofocus placeholder="Enter your username">
+                        <label class="block text-xs uppercase tracking-[.2em] text-neutral-400" for="username">Username</label>
+                        <input class="mt-2 w-full rounded-lg border border-white/15 bg-ink/60 px-3.5 py-2.5 text-sm text-white outline-none transition placeholder:text-neutral-600 focus:border-accent focus:ring-4 focus:ring-accent/30" id="username" name="username" type="text" value="<?= htmlspecialchars($username, ENT_QUOTES, 'UTF-8') ?>" autocomplete="username" required autofocus placeholder="Enter your username">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700" for="password">Password</label>
-                        <div class="relative mt-1.5">
-                            <input class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 pr-16 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15" id="password" name="password" type="password" autocomplete="current-password" required placeholder="Enter your password">
-                            <button class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-800" type="button" data-toggle-password aria-label="Show password">Show</button>
+                        <label class="block text-xs uppercase tracking-[.2em] text-neutral-400" for="password">Password</label>
+                        <div class="relative mt-2">
+                            <input class="w-full rounded-lg border border-white/15 bg-ink/60 px-3.5 py-2.5 pr-16 text-sm text-white outline-none transition placeholder:text-neutral-600 focus:border-accent focus:ring-4 focus:ring-accent/30" id="password" name="password" type="password" autocomplete="current-password" required placeholder="Enter your password">
+                            <button class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-[11px] uppercase tracking-[.15em] text-neutral-400 hover:bg-white/10 hover:text-white" type="button" data-toggle-password aria-label="Show password">Show</button>
                         </div>
                     </div>
-                    <label class="flex items-center gap-2.5 text-sm text-slate-600">
-                        <input class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" type="checkbox" name="remember" value="1"<?= $rememberedUsername !== '' ? ' checked' : '' ?>> Remember my username
+                    <label class="flex items-center gap-2.5 text-sm text-neutral-400">
+                        <input class="h-4 w-4 rounded border-white/20 bg-ink text-accent focus:ring-accent" type="checkbox" name="remember" value="1"<?= $rememberedUsername !== '' ? ' checked' : '' ?>> Remember my username
                     </label>
-                    <button class="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/30" type="submit">Sign in <span aria-hidden="true">→</span></button>
+                    <button class="flex w-full items-center justify-center gap-3 rounded-lg bg-accent px-4 py-3 text-xs font-semibold uppercase tracking-[.25em] text-white shadow-lg shadow-accent/30 transition hover:bg-accent-dark focus:outline-none focus:ring-4 focus:ring-accent/40" type="submit">Sign in <span aria-hidden="true">→</span></button>
                 </form>
-                <p class="mt-8 text-center text-xs leading-5 text-slate-400">Accounts are created by the system administrator.<br>There is no public registration.</p>
+                <p class="mt-7 text-center text-xs leading-5 text-neutral-500">Accounts are created by the system administrator.<br>There is no public registration.</p>
             </div>
         </section>
     </main>
