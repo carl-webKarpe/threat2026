@@ -1,4 +1,4 @@
-USE maldetect_db;
+USE maldetect2026_db;
 
 -- Phase 9: endpoint agents that report downloaded files from other PCs and laptops.
 -- Safe to run more than once.

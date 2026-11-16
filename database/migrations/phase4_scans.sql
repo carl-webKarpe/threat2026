@@ -1,4 +1,4 @@
-USE maldetect_db;
+USE maldetect2026_db;
 
 -- Brings an existing Phase 3 `scans` table up to the Phase 4 schema.
 -- Safe to run more than once: each column and index is only added when it is missing.

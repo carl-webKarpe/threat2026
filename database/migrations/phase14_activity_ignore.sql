@@ -1,4 +1,4 @@
-USE maldetect_db;
+USE maldetect2026_db;
 
 -- Phase 14: files and folders an admin wants left out of file activity monitoring, per device.
 -- Safe to run more than once.

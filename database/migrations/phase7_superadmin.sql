@@ -1,4 +1,4 @@
-USE maldetect_db;
+USE maldetect2026_db;
 
 -- Run the conditional statements once against an existing Phase 2 database.
 SET @has_last_login := (

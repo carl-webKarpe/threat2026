@@ -1,4 +1,4 @@
-USE maldetect_db;
+USE maldetect2026_db;
 
 CREATE TABLE IF NOT EXISTS login_attempts (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

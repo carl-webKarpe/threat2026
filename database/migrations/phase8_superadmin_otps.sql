@@ -1,4 +1,4 @@
-USE maldetect_db;
+USE maldetect2026_db;
 
 CREATE TABLE IF NOT EXISTS superadmin_otps (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

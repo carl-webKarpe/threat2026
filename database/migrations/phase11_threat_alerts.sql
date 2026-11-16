@@ -1,4 +1,4 @@
-USE maldetect_db;
+USE maldetect2026_db;
 
 -- Phase 11: email alerts for threats found on devices.
 -- Safe to run more than once.

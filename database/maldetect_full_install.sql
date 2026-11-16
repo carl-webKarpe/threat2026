@@ -1,11 +1,11 @@
 -- MalDetect full database install (fresh install).
 -- In MySQL Workbench: File > Open SQL Script > this file, then Query > Execute All (Ctrl+Shift+Enter).
--- Creates maldetect_db with every table up to Phase 14. Safe to run again: existing tables and seed accounts are kept.
+-- Creates maldetect2026_db with every table up to Phase 14. Safe to run again: existing tables and seed accounts are kept.
 -- For a database that already exists from an older phase, you may instead run only the files in migrations/.
 
 
-CREATE DATABASE IF NOT EXISTS maldetect_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE maldetect_db;
+CREATE DATABASE IF NOT EXISTS maldetect2026_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE maldetect2026_db;
 
 CREATE TABLE IF NOT EXISTS users (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

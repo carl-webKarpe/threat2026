@@ -1,4 +1,4 @@
-USE maldetect_db;
+USE maldetect2026_db;
 
 -- Phase 13: real-time file activity monitoring (created, modified, deleted, renamed, moved files).
 -- Safe to run more than once.

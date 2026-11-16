@@ -1,4 +1,4 @@
-USE maldetect_db;
+USE maldetect2026_db;
 
 -- Phase 12: show a device as Offline as soon as its agent is stopped.
 -- Safe to run more than once.

@@ -1,4 +1,4 @@
-USE maldetect_db;
+USE maldetect2026_db;
 
 -- Phase 10: "Scan now" commands for devices, and a shared VirusTotal rate limit.
 -- Safe to run more than once.

@@ -73,10 +73,10 @@ Setup used here: **MySQL Server (MySQL80) + MySQL Workbench** for the database, 
 Paste this any time you are not sure which changes you already ran:
 
 ```sql
-USE maldetect_db;
+USE maldetect2026_db;
 SHOW TABLES;
 SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_SCHEMA = 'maldetect_db' AND TABLE_NAME = 'users';
+WHERE TABLE_SCHEMA = 'maldetect2026_db' AND TABLE_NAME = 'users';
 ```
 
 | If you see... | then you already have... |
@@ -109,7 +109,7 @@ Skip the change log. Run the file `database/maldetect_full_install.sql` (Workben
 **Step 3: Run this SQL** (it is the same as `database/migrations/phase9_devices.sql`):
 
 ```sql
-USE maldetect_db;
+USE maldetect2026_db;
 
 CREATE TABLE IF NOT EXISTS devices (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -168,7 +168,7 @@ CREATE TABLE IF NOT EXISTS device_detections (
 **Step 4: Check it worked.** Run this SQL. Both tables should be listed:
 
 ```sql
-USE maldetect_db;
+USE maldetect2026_db;
 SHOW TABLES LIKE 'device%';
 ```
 
@@ -242,7 +242,7 @@ SHOW TABLES LIKE 'device%';
 **Step 5: Set the Superadmin email.** Click the **SQL** tab, paste this (use your email) and click **Go**:
 
 ```sql
-USE maldetect_db;
+USE maldetect2026_db;
 UPDATE users SET email = 'your-email@gmail.com' WHERE username = 'superadmin';
 SELECT username, email, role FROM users;
 ```
@@ -276,7 +276,7 @@ SELECT username, email, role FROM users;
 **SQL to run:** none. If you already imported `phase9_file_monitoring.sql`, you can remove its unused tables (run this in Workbench):
 
 ```sql
-USE maldetect_db;
+USE maldetect2026_db;
 DROP TABLE IF EXISTS file_monitor_events, file_monitor_state, file_monitor_status;
 ```
 
@@ -300,24 +300,24 @@ DROP TABLE IF EXISTS file_monitor_events, file_monitor_state, file_monitor_statu
 1. In `C:\xampp1\htdocs\threat2026\config\`, copy `database.local.example.php` and name the copy `database.local.php` (skip if it already exists).
 2. Open it in Notepad, set `'password' => 'your MySQL root password'`, and save.
 
-**Step 3: Check the database in Workbench.** You created `maldetect_db` in Workbench before, so it should still be there. Run this:
+**Step 3: Check the database in Workbench.** You created `maldetect2026_db` in Workbench before, so it should still be there. Run this:
 
 ```sql
-SHOW DATABASES LIKE 'maldetect_db';
+SHOW DATABASES LIKE 'maldetect2026_db';
 ```
 
-- If it shows `maldetect_db`, run the next SQL to confirm it has 8 tables, then go to Step 4.
+- If it shows `maldetect2026_db`, run the next SQL to confirm it has 8 tables, then go to Step 4.
 - If nothing comes back, run `database\maldetect_full_install.sql` (**File > Open SQL Script**, then **Ctrl+Shift+Enter**).
 
 ```sql
-USE maldetect_db;
+USE maldetect2026_db;
 SHOW TABLES;
 ```
 
 **Step 4: Set the Superadmin email** (use your own email), if you have not done it in this database yet:
 
 ```sql
-USE maldetect_db;
+USE maldetect2026_db;
 UPDATE users SET email = 'your-email@gmail.com' WHERE username = 'superadmin';
 SELECT username, email, role FROM users;
 ```
@@ -338,7 +338,7 @@ SELECT username, email, role FROM users;
 **Step 2: Run this SQL in Workbench** (same as `database/migrations/phase10_device_scans.sql`; you can also open that file with **File > Open SQL Script**). Run it with **Ctrl+Shift+Enter**:
 
 ```sql
-USE maldetect_db;
+USE maldetect2026_db;
 
 -- Phase 10: "Scan now" commands for devices, and a shared VirusTotal rate limit.
 -- Safe to run more than once.
@@ -383,7 +383,7 @@ PREPARE phase10_stmt FROM @sql; EXECUTE phase10_stmt; DEALLOCATE PREPARE phase10
 **Step 3: Check it worked:**
 
 ```sql
-USE maldetect_db;
+USE maldetect2026_db;
 SHOW TABLES LIKE 'device_commands';
 SHOW COLUMNS FROM device_detections LIKE 'trigger_type';
 ```
@@ -417,7 +417,7 @@ Both should return one row.
 **Step 2: Run this SQL in Workbench** (same as `database/migrations/phase11_threat_alerts.sql`), with **Ctrl+Shift+Enter**:
 
 ```sql
-USE maldetect_db;
+USE maldetect2026_db;
 
 -- Phase 11: email alerts for threats found on devices.
 -- Safe to run more than once.
@@ -432,13 +432,13 @@ PREPARE phase11_stmt FROM @sql; EXECUTE phase11_stmt; DEALLOCATE PREPARE phase11
 Check it worked; this should return one row:
 
 ```sql
-SHOW COLUMNS FROM maldetect_db.device_detections LIKE 'alert_sent_at';
+SHOW COLUMNS FROM maldetect2026_db.device_detections LIKE 'alert_sent_at';
 ```
 
 **Step 3: Choose who gets alert emails.** Alerts go to active Admin and Superadmin accounts with a real email. The test accounts use fake `@example.test` addresses, which are skipped. To get alerts as `admin` too, run (use your email):
 
 ```sql
-USE maldetect_db;
+USE maldetect2026_db;
 UPDATE users SET email = 'your-email@gmail.com' WHERE username = 'admin';
 SELECT username, email, role FROM users;
 ```
@@ -488,7 +488,7 @@ Use **Disable** instead if you only want to stop a device for now and keep its h
 **Step 2: Run this SQL in Workbench** (same as `database/migrations/phase12_agent_stop.sql`), with **Ctrl+Shift+Enter**:
 
 ```sql
-USE maldetect_db;
+USE maldetect2026_db;
 
 -- Phase 12: show a device as Offline as soon as its agent is stopped.
 -- Safe to run more than once.
@@ -503,7 +503,7 @@ PREPARE phase12_stmt FROM @sql; EXECUTE phase12_stmt; DEALLOCATE PREPARE phase12
 Check it worked; this should return one row:
 
 ```sql
-SHOW COLUMNS FROM maldetect_db.devices LIKE 'agent_stopped_at';
+SHOW COLUMNS FROM maldetect2026_db.devices LIKE 'agent_stopped_at';
 ```
 
 **Step 3: Update the agent on every laptop/PC.** Stop it (**Ctrl+C**), copy the new `agent\maldetect_agent.py` over the old one (on Laptop 2: into `C:\MalDetectAgent`), and start it again. The first line says `MalDetect agent 1.2.0`.
@@ -683,7 +683,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\check_network.ps1
 **Step 2: Run this SQL in Workbench** (same as `database/migrations/phase13_file_activity.sql`; you can also open that file with **File > Open SQL Script**). Run it with **Ctrl+Shift+Enter**:
 
 ```sql
-USE maldetect_db;
+USE maldetect2026_db;
 
 -- Phase 13: real-time file activity monitoring (created, modified, deleted, renamed, moved files).
 -- Safe to run more than once.
@@ -745,7 +745,7 @@ PREPARE phase13_stmt FROM @sql; EXECUTE phase13_stmt; DEALLOCATE PREPARE phase13
 **Step 3: Check it worked:**
 
 ```sql
-USE maldetect_db;
+USE maldetect2026_db;
 SHOW TABLES LIKE 'file_activity_events';
 SHOW COLUMNS FROM devices LIKE 'activity%';
 ```
@@ -804,7 +804,7 @@ The first line should say `MalDetect agent 1.4.0`. On the first start the agent 
 **Step 2: Run this SQL in Workbench** (same as `database/migrations/phase14_activity_ignore.sql`), with **Ctrl+Shift+Enter**:
 
 ```sql
-USE maldetect_db;
+USE maldetect2026_db;
 
 -- Phase 14: files and folders an admin wants left out of file activity monitoring, per device.
 -- Safe to run more than once.
@@ -819,7 +819,7 @@ PREPARE phase14_stmt FROM @sql; EXECUTE phase14_stmt; DEALLOCATE PREPARE phase14
 **Step 3: Check it worked:**
 
 ```sql
-USE maldetect_db;
+USE maldetect2026_db;
 SHOW COLUMNS FROM devices LIKE 'activity_ignore';
 ```
 
@@ -885,6 +885,50 @@ Within a minute, **Devices** shows the PCs **● Online**. With HTTPS, first run
 **Step 3: On each monitored PC,** copy the `dist` folder, double-click `install_agent.bat`, click **Yes**, paste the PC's token from **Devices** and press **Enter**. The window ends with **MalDetect agent installed.**
 
 The token must belong to **this** server's database. After moving the server to a new PC with a fresh database, register every PC again on **Devices** and use the new tokens; old tokens are refused (HTTP 401).
+
+### Change 25: Database renamed to maldetect2026_db
+
+**What changed:** the database is now called **`maldetect2026_db`** (before: `maldetect_db`). The website, the install script, every migration file and the SQL in this guide use the new name. Nothing else changes.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Move your data to the new name.** Run this SQL in MySQL Workbench (or phpMyAdmin > **SQL** tab) with **Ctrl+Shift+Enter**. It moves every table, with all accounts, devices, detections and file activity, into `maldetect2026_db`. Nothing is copied or deleted, and the device tokens keep working:
+
+```sql
+CREATE DATABASE IF NOT EXISTS maldetect2026_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+RENAME TABLE
+    maldetect_db.users TO maldetect2026_db.users,
+    maldetect_db.scans TO maldetect2026_db.scans,
+    maldetect_db.audit_logs TO maldetect2026_db.audit_logs,
+    maldetect_db.login_attempts TO maldetect2026_db.login_attempts,
+    maldetect_db.superadmin_otp_requests TO maldetect2026_db.superadmin_otp_requests,
+    maldetect_db.superadmin_otps TO maldetect2026_db.superadmin_otps,
+    maldetect_db.devices TO maldetect2026_db.devices,
+    maldetect_db.device_detections TO maldetect2026_db.device_detections,
+    maldetect_db.device_commands TO maldetect2026_db.device_commands,
+    maldetect_db.virustotal_requests TO maldetect2026_db.virustotal_requests,
+    maldetect_db.file_activity_events TO maldetect2026_db.file_activity_events;
+```
+
+If it says a table **already exists** in `maldetect2026_db`, you ran the install script first; ask for help before going on, so no data is overwritten. If it says a table **doesn't exist** in `maldetect_db`, that table was never installed; remove that one line and run it again.
+
+**Step 3: Add anything that is missing** by running `database\maldetect_full_install.sql` once (**File > Open SQL Script**, then **Ctrl+Shift+Enter**). It keeps your data.
+
+**Step 4: Check:**
+
+```sql
+USE maldetect2026_db;
+SELECT username, role FROM users;
+SELECT COUNT(*) FROM devices;
+```
+
+Your accounts and the number of devices must appear. The old database `maldetect_db` is now empty. You can delete it in Workbench (right-click it > **Drop Schema**) once everything works.
+
+**Step 5: Your settings file.** If `config\database.local.php` exists and contains `'database' => 'maldetect_db'`, change it to `'database' => 'maldetect2026_db'` and save. (If the file has no `database` line, nothing to do.)
+
+**Step 6: Test.** Log in to MalDetect: the dashboard and **Devices** show your data as before.
+
+**New PC or empty database:** skip Step 2 and only run `database\maldetect_full_install.sql`; it creates `maldetect2026_db` with the accounts `superadmin`, `admin` and `user` (password `ChangeMe123!`).
 
 ---
 
@@ -978,8 +1022,8 @@ Your laptop can be **both** the server and the monitored PC. This tests the whol
 | "Unable to complete login" and `apache\logs\error.log` says **"could not find driver"** | PHP's MySQL driver is off. Check `C:\xampp1\php\php.ini`: if it is empty (0 bytes), copy `php.ini-development` over it. Remove the `;` before `extension=curl`, `fileinfo`, `mbstring`, `openssl` and `pdo_mysql`; add `extension_dir = "C:\xampp1\php\ext"`, `curl.cainfo` and `openssl.cafile` (pointing to `C:\xampp1\apache\bin\curl-ca-bundle.crt`), `upload_max_filesize = 20M` and `post_max_size = 21M` at the end; then restart Apache. Check with `C:\xampp1\php\php.exe -m`. |
 | "Unable to complete login" after switching to Workbench | PHP cannot log in to MySQL80. Put the right root password in `config\database.local.php` (Change 7, Step 2), and check MySQL80 is running in `services.msc`. |
 | phpMyAdmin: `#1050 - Table ... already exists` | You already ran this change. Nothing to do. |
-| phpMyAdmin: `#1046 - No database selected` | Add `USE maldetect_db;` as the first line, or click **maldetect_db** on the left before the **SQL** tab. |
-| Workbench: `Error Code: 1046. No database selected` | The SQL must start with `USE maldetect_db;`. Run the whole script with Ctrl+Shift+Enter. |
+| phpMyAdmin: `#1046 - No database selected` | Add `USE maldetect2026_db;` as the first line, or click **maldetect2026_db** on the left before the **SQL** tab. |
+| Workbench: `Error Code: 1046. No database selected` | The SQL must start with `USE maldetect2026_db;`. Run the whole script with Ctrl+Shift+Enter. |
 | Workbench: `Error Code: 1050. Table already exists` | You already ran this change. Nothing to do. |
 | Workbench: `Error Code: 1824. Failed to open the referenced table 'users'` | The database is not installed yet. Run `database/maldetect_full_install.sql` first. |
 | Login page says "Unable to complete login" | PHP cannot connect to MySQL. Check that MySQL is running and that the user and password match `config/database.php` (default: `root`, empty password). |

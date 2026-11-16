@@ -11,7 +11,7 @@ function database_connection(): PDO
 
     $host = getenv('MALDETECT_DB_HOST') ?: ($local['host'] ?? '127.0.0.1');
     $port = getenv('MALDETECT_DB_PORT') ?: (string) ($local['port'] ?? '3306');
-    $database = getenv('MALDETECT_DB_NAME') ?: ($local['database'] ?? 'maldetect_db');
+    $database = getenv('MALDETECT_DB_NAME') ?: ($local['database'] ?? 'maldetect2026_db');
     $username = getenv('MALDETECT_DB_USER') ?: ($local['username'] ?? 'root');
     $password = getenv('MALDETECT_DB_PASSWORD') ?: (string) ($local['password'] ?? '');
 

@@ -5,7 +5,7 @@
 return [
     'host' => '127.0.0.1',
     'port' => '3306',
-    'database' => 'maldetect_db',
+    'database' => 'maldetect2026_db',
     'username' => 'root',
     'password' => 'YOUR_MYSQL_PASSWORD',
 ];

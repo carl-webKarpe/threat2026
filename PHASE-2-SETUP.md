@@ -18,7 +18,7 @@ http://localhost/threat2026/login.php
 
 The local test accounts use the password `ChangeMe123!`. Configure the Gmail App Password in the ignored `config/mail.local.php` file before testing Superadmin login. OTPs are hashed in the database and are never displayed in the browser.
 
-Install the mail dependency with `composer install` (or `php composer.phar install` when using the bundled local Composer executable), then import `database/migrations/phase8_superadmin_otps.sql`. The Phase 8 login throttle also requires importing `database/migrations/phase8_login_attempts.sql` once into `maldetect_db`.
+Install the mail dependency with `composer install` (or `php composer.phar install` when using the bundled local Composer executable), then import `database/migrations/phase8_superadmin_otps.sql`. The Phase 8 login throttle also requires importing `database/migrations/phase8_login_attempts.sql` once into `maldetect2026_db`.
 
 ## Phase 3 file scanner
 

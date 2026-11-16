@@ -29,7 +29,7 @@ The database runs on MySQL Server (MySQL80) and is managed with MySQL Workbench.
 1. Make sure the **MySQL80** service is running, and open your connection in **MySQL Workbench**.
 2. Choose **File > Open SQL Script** and pick `database/maldetect_full_install.sql`.
 3. Run it with **Query > Execute All** (Ctrl+Shift+Enter).
-4. Refresh **SCHEMAS**. `maldetect_db` should list `users`, `scans`, `audit_logs`, `login_attempts`, `superadmin_otps`, `superadmin_otp_requests`, `devices`, `device_detections`, `device_commands` and `file_activity_events` (among others).
+4. Refresh **SCHEMAS**. `maldetect2026_db` should list `users`, `scans`, `audit_logs`, `login_attempts`, `superadmin_otps`, `superadmin_otp_requests`, `devices`, `device_detections`, `device_commands` and `file_activity_events` (among others).
 5. If your MySQL root user has a password, copy `config/database.local.example.php` to `config/database.local.php` and put the password in it.
 
 You can run the script again safely. It keeps existing tables and accounts.
@@ -52,7 +52,7 @@ You can run the script again safely. It keeps existing tables and accounts.
 
 The server address shown to the monitored PCs (Devices page) is `http://192.168.0.63/threat2026`, set in `config/server.php`; override it in `config/server.local.php` or with `MALDETECT_SERVER_URL`.
 
-PHP connects with `127.0.0.1:3306`, database `maldetect_db`, user `root` and an empty password by default. If you use other values, set these environment variables: `MALDETECT_DB_HOST`, `MALDETECT_DB_PORT`, `MALDETECT_DB_NAME`, `MALDETECT_DB_USER`, `MALDETECT_DB_PASSWORD`.
+PHP connects with `127.0.0.1:3306`, database `maldetect2026_db`, user `root` and an empty password by default. If you use other values, set these environment variables: `MALDETECT_DB_HOST`, `MALDETECT_DB_PORT`, `MALDETECT_DB_NAME`, `MALDETECT_DB_USER`, `MALDETECT_DB_PASSWORD`.
 
 ## Local test accounts
 
