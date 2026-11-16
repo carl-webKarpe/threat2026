@@ -72,10 +72,10 @@ $query = array_filter(['device' => is_int($deviceFilter) ? (string) $deviceFilte
 $pageUrl = static fn (int $number): string => 'detections.php?' . http_build_query($query + ['page' => $number]);
 $h = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 $resultClass = static fn (?string $result): string => match ($result) {
-    'MALICIOUS' => 'text-red-300',
-    'SUSPICIOUS' => 'text-amber-300',
-    'NO_THREAT_DETECTED' => 'text-emerald-300',
-    default => 'text-slate-300',
+    'MALICIOUS' => 'text-red-600',
+    'SUSPICIOUS' => 'text-amber-600',
+    'NO_THREAT_DETECTED' => 'text-emerald-600',
+    default => 'text-slate-700',
 };
 $pageTitle = 'Device Detections';
 $currentPage = 'detections';
@@ -84,39 +84,39 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="flex min-h-screen flex-col lg:flex-row">
 	<div><?php require __DIR__ . '/../includes/admin_sidebar.php'; ?></div>
 	<main class="min-w-0 flex-1 p-6 sm:p-10">
-		<p class="mono text-xs tracking-[.2em] text-violet-300">ENDPOINT ACTIVITY</p>
-		<div class="mt-3 flex flex-wrap items-baseline gap-4"><h1 class="text-3xl font-bold">Device Detections</h1><span data-live-indicator class="text-xs text-emerald-300">● Live</span></div>
-		<p class="mt-2 text-slate-400">Files downloaded on registered devices and their VirusTotal verdicts.</p>
-		<form class="mt-8 grid gap-3 rounded-2xl border border-white/10 bg-white/[.03] p-5 sm:grid-cols-5" method="get">
-			<label class="text-sm text-slate-400 sm:col-span-2">File name or SHA-256<input class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none focus:border-violet-300/50" type="search" name="search" value="<?= $h($search) ?>"></label>
-			<label class="text-sm text-slate-400">Device<select class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100" name="device"><option value="">All</option><?php foreach ($devices as $device): ?><option value="<?= (int) $device['id'] ?>" <?= $deviceFilter === (int) $device['id'] ? 'selected' : '' ?>><?= $h($device['name']) ?></option><?php endforeach; ?></select></label>
-			<label class="text-sm text-slate-400">Result<select class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100" name="result"><option value="">All</option><?php foreach ($allowedResults as $value => $label): ?><option value="<?= $h($value) ?>" <?= $resultFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach; ?></select></label>
-			<label class="text-sm text-slate-400">Source<select class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100" name="trigger"><option value="">All</option><?php foreach ($allowedTriggers as $value => $label): ?><option value="<?= $h($value) ?>" <?= $triggerFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach; ?></select></label>
-			<button class="rounded-xl bg-violet-300 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-violet-200 sm:col-span-5 sm:justify-self-end" type="submit">Apply Filters</button>
+		<p class="text-xs font-semibold uppercase tracking-wider text-blue-700">ENDPOINT ACTIVITY</p>
+		<div class="mt-3 flex flex-wrap items-baseline gap-4"><h1 class="text-3xl font-bold tracking-tight text-slate-900">Device Detections</h1><span data-live-indicator class="text-xs text-emerald-600">● Live</span></div>
+		<p class="mt-2 text-slate-500">Files downloaded on registered devices and their VirusTotal verdicts.</p>
+		<form class="mt-8 grid gap-3 rounded-xl border border-slate-200 bg-white shadow-sm p-5 sm:grid-cols-5" method="get">
+			<label class="text-sm text-slate-500 sm:col-span-2">File name or SHA-256<input class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-blue-500" type="search" name="search" value="<?= $h($search) ?>"></label>
+			<label class="text-sm text-slate-500">Device<select class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900" name="device"><option value="">All</option><?php foreach ($devices as $device): ?><option value="<?= (int) $device['id'] ?>" <?= $deviceFilter === (int) $device['id'] ? 'selected' : '' ?>><?= $h($device['name']) ?></option><?php endforeach; ?></select></label>
+			<label class="text-sm text-slate-500">Result<select class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900" name="result"><option value="">All</option><?php foreach ($allowedResults as $value => $label): ?><option value="<?= $h($value) ?>" <?= $resultFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach; ?></select></label>
+			<label class="text-sm text-slate-500">Source<select class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900" name="trigger"><option value="">All</option><?php foreach ($allowedTriggers as $value => $label): ?><option value="<?= $h($value) ?>" <?= $triggerFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach; ?></select></label>
+			<button class="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 sm:col-span-5 sm:justify-self-end" type="submit">Apply Filters</button>
 		</form>
 		<div data-live-region="detections">
 		<?php if ($loadError): ?>
-			<div class="mt-8 rounded-2xl border border-red-300/20 bg-red-400/10 p-5 text-sm text-red-200">Detections are unavailable. Run database/migrations/phase9_devices.sql first.</div>
+			<div class="mt-8 rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">Detections are unavailable. Run database/migrations/phase9_devices.sql first.</div>
 		<?php elseif (!$detections): ?>
-			<div class="mt-10 rounded-2xl border border-white/10 bg-white/[.03] p-12 text-center text-slate-500">No downloads have been reported yet.</div>
+			<div class="mt-10 rounded-xl border border-slate-200 bg-white shadow-sm p-12 text-center text-slate-500">No downloads have been reported yet.</div>
 		<?php else: ?>
-			<div class="mt-8 overflow-x-auto rounded-2xl border border-white/10 bg-white/[.03]"><table class="w-full min-w-[1100px] text-left text-sm">
-				<thead class="border-b border-white/10 text-xs uppercase tracking-wider text-slate-500"><tr><th class="px-5 py-4">File</th><th class="px-5 py-4">Device</th><th class="px-5 py-4">Source</th><th class="px-5 py-4">Result</th><th class="px-5 py-4">Engines</th><th class="px-5 py-4">Reported</th><th class="px-5 py-4">VirusTotal</th></tr></thead>
-				<tbody class="divide-y divide-white/5">
+			<div class="mt-8 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm"><table class="w-full min-w-[1100px] text-left text-sm">
+				<thead class="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500"><tr><th class="px-5 py-4">File</th><th class="px-5 py-4">Device</th><th class="px-5 py-4">Source</th><th class="px-5 py-4">Result</th><th class="px-5 py-4">Engines</th><th class="px-5 py-4">Reported</th><th class="px-5 py-4">VirusTotal</th></tr></thead>
+				<tbody class="divide-y divide-slate-100">
 				<?php foreach ($detections as $detection): ?>
-					<tr class="text-slate-300" data-row-id="<?= (int) $detection['id'] ?>">
-						<td class="px-5 py-4"><a class="block max-w-[220px] truncate font-semibold text-white underline-offset-4 hover:text-violet-200 hover:underline" href="view_detection.php?id=<?= (int) $detection['id'] ?>" title="<?= $h($detection['file_path'] ?? $detection['file_name']) ?>"><?= $h($detection['file_name']) ?></a><p class="mt-1 text-xs text-slate-500"><?= $detection['file_size'] === null ? '' : $h(scanner_format_size((int) $detection['file_size'])) ?><?php if (($detection['trigger_type'] ?? 'download') === 'manual_scan'): ?> <span class="ml-1 rounded-full border border-violet-300/30 px-2 py-0.5 text-[10px] uppercase tracking-wider text-violet-200">Manual scan</span><?php endif; ?></p></td>
+					<tr class="text-slate-700" data-row-id="<?= (int) $detection['id'] ?>">
+						<td class="px-5 py-4"><a class="block max-w-[220px] truncate font-semibold text-slate-900 underline-offset-4 hover:text-blue-800 hover:underline" href="view_detection.php?id=<?= (int) $detection['id'] ?>" title="<?= $h($detection['file_path'] ?? $detection['file_name']) ?>"><?= $h($detection['file_name']) ?></a><p class="mt-1 text-xs text-slate-500"><?= $detection['file_size'] === null ? '' : $h(scanner_format_size((int) $detection['file_size'])) ?><?php if (($detection['trigger_type'] ?? 'download') === 'manual_scan'): ?> <span class="ml-1 rounded-full border border-blue-200 px-2 py-0.5 text-[10px] uppercase tracking-wider text-blue-700">Manual scan</span><?php endif; ?></p></td>
 						<td class="px-5 py-4"><?= $h($detection['device_name']) ?><p class="mt-1 text-xs text-slate-500"><?= $h($detection['hostname'] ?? '') ?></p></td>
-						<td class="max-w-[220px] truncate px-5 py-4 text-xs text-slate-400" title="<?= $h($detection['source_url'] ?? '') ?>"><?= $h($detection['source_url'] ?: 'Unknown') ?></td>
+						<td class="max-w-[220px] truncate px-5 py-4 text-xs text-slate-500" title="<?= $h($detection['source_url'] ?? '') ?>"><?= $h($detection['source_url'] ?: 'Unknown') ?></td>
 						<td class="px-5 py-4"><p class="font-semibold <?= $resultClass($detection['scan_result']) ?>"><?= $h($detection['risk_level'] ?: ucfirst((string) $detection['scan_status'])) ?></p><p class="mt-1 max-w-[220px] truncate text-xs text-slate-500"><?= $h($detection['threat_name'] ?? '') ?></p></td>
-						<td class="whitespace-nowrap px-5 py-4 text-slate-400"><?= $detection['total_engines'] === null ? '—' : (int) $detection['detection_count'] . ' / ' . (int) $detection['total_engines'] ?></td>
+						<td class="whitespace-nowrap px-5 py-4 text-slate-500"><?= $detection['total_engines'] === null ? '—' : (int) $detection['detection_count'] . ' / ' . (int) $detection['total_engines'] ?></td>
 						<td class="whitespace-nowrap px-5 py-4 text-slate-500"><?= $h($detection['created_at']) ?></td>
-						<td class="px-5 py-4"><a class="font-mono text-xs text-violet-300 hover:text-white" href="https://www.virustotal.com/gui/file/<?= $h($detection['sha256_hash']) ?>" target="_blank" rel="noopener noreferrer"><?= $h(substr($detection['sha256_hash'], 0, 12)) ?>…</a></td>
+						<td class="px-5 py-4"><a class="font-mono text-xs text-blue-700 hover:text-blue-700" href="https://www.virustotal.com/gui/file/<?= $h($detection['sha256_hash']) ?>" target="_blank" rel="noopener noreferrer"><?= $h(substr($detection['sha256_hash'], 0, 12)) ?>…</a></td>
 					</tr>
 				<?php endforeach; ?>
 				</tbody>
 			</table></div>
-			<?php if ($pages > 1): ?><nav class="mt-6 flex items-center justify-between text-sm" aria-label="Detection pages"><span class="text-slate-500">Page <?= $page ?> of <?= $pages ?> (<?= $total ?> downloads)</span><div class="flex gap-2"><?php if ($page > 1): ?><a class="rounded-lg border border-white/10 px-3 py-2 text-slate-300" href="<?= $h($pageUrl($page - 1)) ?>">Previous</a><?php endif; ?><?php if ($page < $pages): ?><a class="rounded-lg border border-white/10 px-3 py-2 text-slate-300" href="<?= $h($pageUrl($page + 1)) ?>">Next</a><?php endif; ?></div></nav><?php endif; ?>
+			<?php if ($pages > 1): ?><nav class="mt-6 flex items-center justify-between text-sm" aria-label="Detection pages"><span class="text-slate-500">Page <?= $page ?> of <?= $pages ?> (<?= $total ?> downloads)</span><div class="flex gap-2"><?php if ($page > 1): ?><a class="rounded-lg border border-slate-200 px-3 py-2 text-slate-700" href="<?= $h($pageUrl($page - 1)) ?>">Previous</a><?php endif; ?><?php if ($page < $pages): ?><a class="rounded-lg border border-slate-200 px-3 py-2 text-slate-700" href="<?= $h($pageUrl($page + 1)) ?>">Next</a><?php endif; ?></div></nav><?php endif; ?>
 		<?php endif; ?>
 		</div>
 	</main>

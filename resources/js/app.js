@@ -1,3 +1,5 @@
+document.documentElement.classList.add('js');
+
 document.addEventListener('DOMContentLoaded', () => {
     const nav = document.querySelector('[data-nav]');
     const menuButton = document.querySelector('[data-menu-button]');
