@@ -13,8 +13,8 @@ $liveRefreshSeconds = max(2, (int) ($liveRefreshSeconds ?? 5));
 	const indicators = () => document.querySelectorAll('[data-live-indicator]');
 	const setIndicator = (text, ok) => indicators().forEach((el) => {
 		el.textContent = text;
-		el.classList.toggle('text-emerald-600', ok);
-		el.classList.toggle('text-amber-600', !ok);
+		el.classList.toggle('text-emerald-300', ok);
+		el.classList.toggle('text-amber-300', !ok);
 	});
 	// Last HTML received per region, so highlight classes added here do not count as changes.
 	const lastHtml = new Map();

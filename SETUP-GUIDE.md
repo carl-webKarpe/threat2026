@@ -886,24 +886,6 @@ Within a minute, **Devices** shows the PCs **● Online**. With HTTPS, first run
 
 The token must belong to **this** server's database. After moving the server to a new PC with a fresh database, register every PC again on **Devices** and use the new tokens; old tokens are refused (HTTP 401).
 
-### Change 23: New light design for the whole system
-
-**What changed** (only the look; every feature, page, permission and setting works as before):
-
-- **Light, professional design** on every page: white cards on a light gray background, blue as the main color, the Inter font, and clear red / amber / green colors for results.
-- **New sidebar** for Admin and Superadmin with an icon for each page, and your name, role and **Logout** at the bottom.
-- **New Admin Dashboard:** summary cards (devices online, downloads, threats and file activity in the last 24 hours), a **7-day chart** of downloads and threats, a 7-day file activity chart, recent threats, and your own file scans. Click a card to open the matching page.
-- **New Superadmin and User dashboards**, a new **login page**, and new **Access denied** and **Superadmin code** pages.
-- **New home page** (`index.php`). The old page showed invented numbers ("98.7% accuracy", "10,542 files analyzed"); the new one only describes what MalDetect really does.
-
-**SQL to run:** none.
-
-**Step 1: Get the code.** Do Part 1.
-
-**Step 2: Reload the browser** with **Ctrl+F5** on any MalDetect page, so it does not show the old design from its cache.
-
-The pages need internet access for their styles and font (Tailwind CSS and Google Fonts), the same as before. Without internet the pages still work, but look unstyled.
-
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)

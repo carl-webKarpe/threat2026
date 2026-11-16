@@ -165,11 +165,11 @@ $localTime = static function (?string $utc) use ($localZone, $utcZone): string {
 };
 $utcTitle = static fn (?string $utc): string => $utc ? $utc . ' UTC' : '';
 $typeClass = static fn (string $type): string => match (substr($type, strpos($type, '_') + 1)) {
-    'DELETED' => 'border-red-200 bg-red-50 text-red-700',
-    'RENAMED' => 'border-sky-200 bg-sky-50 text-sky-700',
-    'MOVED' => 'border-violet-200 bg-violet-50 text-violet-700',
-    'CREATED' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
-    default => 'border-amber-200 bg-amber-50 text-amber-700',
+    'DELETED' => 'border-red-300/30 text-red-200',
+    'RENAMED' => 'border-sky-300/30 text-sky-200',
+    'MOVED' => 'border-violet-300/30 text-violet-200',
+    'CREATED' => 'border-emerald-300/30 text-emerald-200',
+    default => 'border-amber-300/30 text-amber-200',
 };
 $folderOf = static function (?string $path): string {
     if ($path === null) {
@@ -185,11 +185,11 @@ $query = array_filter([
 $pageUrl = static fn (int $number): string => 'activity.php?' . http_build_query($query + ['page' => $number]);
 $folderStatus = is_array($selectedDevice) ? json_decode((string) ($selectedDevice['activity_status'] ?? ''), true) : null;
 $statusClass = static fn (string $status): string => match ($status) {
-    'watching' => 'text-emerald-600',
-    'polling' => 'text-amber-700',
-    default => 'text-red-600',
+    'watching' => 'text-emerald-300',
+    'polling' => 'text-amber-200',
+    default => 'text-red-300',
 };
-$inputClass = 'mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-blue-500';
+$inputClass = 'mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none focus:border-violet-300/50';
 
 $pageTitle = 'File Activity';
 $currentPage = 'activity';
@@ -198,51 +198,51 @@ require_once __DIR__ . '/header.php';
 <div class="flex min-h-screen flex-col lg:flex-row">
 	<div><?php require $activitySidebar; ?></div>
 	<main class="min-w-0 flex-1 p-6 sm:p-10">
-		<p class="text-xs font-semibold uppercase tracking-wider text-blue-700">ENDPOINT ACTIVITY</p>
-		<div class="mt-3 flex flex-wrap items-baseline gap-4"><h1 class="text-3xl font-bold tracking-tight text-slate-900">File Activity</h1><span data-live-indicator class="text-xs text-emerald-600">● Live</span></div>
-		<p class="mt-2 max-w-3xl text-slate-500">Files and folders created, modified, deleted, renamed or moved in the monitored folders of each device (Desktop, Documents, Downloads, Pictures, Videos, Music and extra folders). Only names, paths, sizes and times are recorded, never file contents. Times are shown in the server's time zone (<?= $h($localZone->getName()) ?>); hover a time for UTC.</p>
+		<p class="mono text-xs tracking-[.2em] text-violet-300">ENDPOINT ACTIVITY</p>
+		<div class="mt-3 flex flex-wrap items-baseline gap-4"><h1 class="text-3xl font-bold">File Activity</h1><span data-live-indicator class="text-xs text-emerald-300">● Live</span></div>
+		<p class="mt-2 max-w-3xl text-slate-400">Files and folders created, modified, deleted, renamed or moved in the monitored folders of each device (Desktop, Documents, Downloads, Pictures, Videos, Music and extra folders). Only names, paths, sizes and times are recorded, never file contents. Times are shown in the server's time zone (<?= $h($localZone->getName()) ?>); hover a time for UTC.</p>
 
-		<?php if ($activityNotice !== ''): ?><p class="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status"><?= $h($activityNotice) ?></p><?php endif; ?>
-		<?php if ($activityError !== ''): ?><p class="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert"><?= $h($activityError) ?></p><?php endif; ?>
+		<?php if ($activityNotice !== ''): ?><p class="mt-6 rounded-xl border border-emerald-300/20 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-200" role="status"><?= $h($activityNotice) ?></p><?php endif; ?>
+		<?php if ($activityError !== ''): ?><p class="mt-6 rounded-xl border border-red-300/20 bg-red-400/10 px-4 py-3 text-sm text-red-200" role="alert"><?= $h($activityError) ?></p><?php endif; ?>
 
-		<form class="mt-8 grid gap-3 rounded-xl border border-slate-200 bg-white shadow-sm p-5 sm:grid-cols-4" method="get">
-			<label class="text-sm text-slate-500">Device (PC)<select class="<?= $inputClass ?>" name="device"><option value="">All</option><?php foreach ($activityDevices as $device): ?><option value="<?= (int) $device['id'] ?>" <?= $deviceFilter === (int) $device['id'] ? 'selected' : '' ?>><?= $h($device['name']) ?></option><?php endforeach; ?></select></label>
-			<label class="text-sm text-slate-500">Event type<select class="<?= $inputClass ?>" name="type"><option value="">All</option><?php foreach ($typeLabels as $value => $label): ?><option value="<?= $h($value) ?>" <?= $typeFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach; ?></select></label>
-			<label class="text-sm text-slate-500">File name<input class="<?= $inputClass ?>" type="search" name="name" value="<?= $h($nameFilter) ?>" placeholder="e.g. report.docx"></label>
-			<label class="text-sm text-slate-500">Folder path contains<input class="<?= $inputClass ?>" type="search" name="folder" value="<?= $h($folderFilter) ?>" placeholder="e.g. Documents\Projects"></label>
-			<label class="text-sm text-slate-500">Detected from<input class="<?= $inputClass ?>" type="date" name="from" value="<?= $h($fromFilter) ?>"></label>
-			<label class="text-sm text-slate-500">Detected to<input class="<?= $inputClass ?>" type="date" name="to" value="<?= $h($toFilter) ?>"></label>
-			<label class="text-sm text-slate-500">Source<select class="<?= $inputClass ?>" name="source"><option value="">All</option><?php foreach ($sourceLabels as $value => $label): ?><option value="<?= $h($value) ?>" <?= $sourceFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach; ?></select></label>
-			<div class="flex items-end justify-end gap-3"><a class="rounded-lg border border-slate-200 px-5 py-3 text-sm text-slate-700 hover:bg-slate-100" href="activity.php">Clear</a><button class="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700" type="submit">Apply Filters</button></div>
+		<form class="mt-8 grid gap-3 rounded-2xl border border-white/10 bg-white/[.03] p-5 sm:grid-cols-4" method="get">
+			<label class="text-sm text-slate-400">Device (PC)<select class="<?= $inputClass ?>" name="device"><option value="">All</option><?php foreach ($activityDevices as $device): ?><option value="<?= (int) $device['id'] ?>" <?= $deviceFilter === (int) $device['id'] ? 'selected' : '' ?>><?= $h($device['name']) ?></option><?php endforeach; ?></select></label>
+			<label class="text-sm text-slate-400">Event type<select class="<?= $inputClass ?>" name="type"><option value="">All</option><?php foreach ($typeLabels as $value => $label): ?><option value="<?= $h($value) ?>" <?= $typeFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach; ?></select></label>
+			<label class="text-sm text-slate-400">File name<input class="<?= $inputClass ?>" type="search" name="name" value="<?= $h($nameFilter) ?>" placeholder="e.g. report.docx"></label>
+			<label class="text-sm text-slate-400">Folder path contains<input class="<?= $inputClass ?>" type="search" name="folder" value="<?= $h($folderFilter) ?>" placeholder="e.g. Documents\Projects"></label>
+			<label class="text-sm text-slate-400">Detected from<input class="<?= $inputClass ?>" type="date" name="from" value="<?= $h($fromFilter) ?>"></label>
+			<label class="text-sm text-slate-400">Detected to<input class="<?= $inputClass ?>" type="date" name="to" value="<?= $h($toFilter) ?>"></label>
+			<label class="text-sm text-slate-400">Source<select class="<?= $inputClass ?>" name="source"><option value="">All</option><?php foreach ($sourceLabels as $value => $label): ?><option value="<?= $h($value) ?>" <?= $sourceFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach; ?></select></label>
+			<div class="flex items-end justify-end gap-3"><a class="rounded-xl border border-white/10 px-5 py-3 text-sm text-slate-300 hover:bg-white/5" href="activity.php">Clear</a><button class="rounded-xl bg-violet-300 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-violet-200" type="submit">Apply Filters</button></div>
 		</form>
 
 		<?php if (is_array($selectedDevice)): ?>
-			<section class="mt-8 rounded-xl border border-slate-200 bg-white shadow-sm p-5">
+			<section class="mt-8 rounded-2xl border border-white/10 bg-white/[.03] p-5">
 				<div data-live-region="activity-folders">
 				<div class="flex flex-wrap items-baseline justify-between gap-3"><h2 class="text-lg font-semibold">Monitored folders on <?= $h($selectedDevice['name']) ?></h2><p class="text-xs text-slate-500"><?= $selectedDevice['activity_status_at'] ? 'Reported by the agent at ' . $h($selectedDevice['activity_status_at']) : 'The agent has not reported its folders yet (it needs agent version 1.4.0 or newer).' ?></p></div>
 				<?php if (is_array($folderStatus)): ?>
-					<p class="mt-2 text-sm text-slate-500">Mode: <span class="<?= ($folderStatus['mode'] ?? '') === 'realtime' ? 'text-emerald-600' : 'text-amber-700' ?>"><?= $h(['realtime' => 'Real time', 'polling' => 'Polling (watchdog not installed)', 'off' => 'Off'][$folderStatus['mode'] ?? 'off'] ?? 'Off') ?></span><?= isset($folderStatus['queued']) && (int) $folderStatus['queued'] > 0 ? ' · ' . (int) $folderStatus['queued'] . ' event(s) waiting to be sent' : '' ?></p>
-					<?php if (!empty($folderStatus['message'])): ?><p class="mt-2 text-sm text-amber-700"><?= $h($folderStatus['message']) ?></p><?php endif; ?>
+					<p class="mt-2 text-sm text-slate-400">Mode: <span class="<?= ($folderStatus['mode'] ?? '') === 'realtime' ? 'text-emerald-300' : 'text-amber-200' ?>"><?= $h(['realtime' => 'Real time', 'polling' => 'Polling (watchdog not installed)', 'off' => 'Off'][$folderStatus['mode'] ?? 'off'] ?? 'Off') ?></span><?= isset($folderStatus['queued']) && (int) $folderStatus['queued'] > 0 ? ' · ' . (int) $folderStatus['queued'] . ' event(s) waiting to be sent' : '' ?></p>
+					<?php if (!empty($folderStatus['message'])): ?><p class="mt-2 text-sm text-amber-200"><?= $h($folderStatus['message']) ?></p><?php endif; ?>
 					<ul class="mt-4 grid gap-2 text-sm sm:grid-cols-2">
 						<?php foreach ($folderStatus['folders'] ?? [] as $folder): ?>
-							<li class="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3"><p><span class="font-semibold text-slate-900"><?= $h($folder['label'] ?? '') ?></span> <span class="<?= $statusClass((string) ($folder['status'] ?? '')) ?>"><?= $h(ucfirst((string) ($folder['status'] ?? ''))) ?></span></p><p class="mt-1 break-all font-mono text-xs text-slate-500"><?= $h($folder['path'] ?? '') ?></p><?php if (!empty($folder['message'])): ?><p class="mt-1 text-xs text-amber-700"><?= $h($folder['message']) ?></p><?php endif; ?></li>
+							<li class="rounded-xl border border-white/5 bg-slate-950/40 px-4 py-3"><p><span class="font-semibold text-white"><?= $h($folder['label'] ?? '') ?></span> <span class="<?= $statusClass((string) ($folder['status'] ?? '')) ?>"><?= $h(ucfirst((string) ($folder['status'] ?? ''))) ?></span></p><p class="mt-1 break-all font-mono text-xs text-slate-500"><?= $h($folder['path'] ?? '') ?></p><?php if (!empty($folder['message'])): ?><p class="mt-1 text-xs text-amber-200"><?= $h($folder['message']) ?></p><?php endif; ?></li>
 						<?php endforeach; ?>
 					</ul>
 				<?php endif; ?>
 				</div>
 				<?php if ($busySample > 0): ?>
 					<div class="mt-5 grid gap-4 lg:grid-cols-2">
-						<div><h3 class="text-sm font-semibold text-slate-900">Busiest folders</h3><p class="text-xs text-slate-500">Where the latest <?= $busySample ?> matching event(s) of this PC happened.</p>
+						<div><h3 class="text-sm font-semibold text-white">Busiest folders</h3><p class="text-xs text-slate-500">Where the latest <?= $busySample ?> matching event(s) of this PC happened.</p>
 							<ul class="mt-2 grid gap-1 text-xs">
 								<?php foreach ($busyFolders as $folder => $count): ?>
-									<li class="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-2"><span class="w-14 shrink-0 text-right font-mono text-slate-700"><?= (int) $count ?></span><span class="min-w-0 flex-1 break-all font-mono text-slate-500"><?= $h($folder) ?></span><?php if ($activityCanEdit && $ignoreText !== null): ?><button type="button" class="shrink-0 text-amber-700 hover:text-blue-700" data-ignore-add="<?= $h($folder) ?>">Ignore</button><?php endif; ?></li>
+									<li class="flex items-center gap-3 rounded-lg bg-slate-950/40 px-3 py-2"><span class="w-14 shrink-0 text-right font-mono text-slate-300"><?= (int) $count ?></span><span class="min-w-0 flex-1 break-all font-mono text-slate-400"><?= $h($folder) ?></span><?php if ($activityCanEdit && $ignoreText !== null): ?><button type="button" class="shrink-0 text-amber-200 hover:text-white" data-ignore-add="<?= $h($folder) ?>">Ignore</button><?php endif; ?></li>
 								<?php endforeach; ?>
 							</ul>
 						</div>
-						<div><h3 class="text-sm font-semibold text-slate-900">Busiest file types</h3><p class="text-xs text-slate-500">File extensions in the same events.</p>
+						<div><h3 class="text-sm font-semibold text-white">Busiest file types</h3><p class="text-xs text-slate-500">File extensions in the same events.</p>
 							<ul class="mt-2 grid gap-1 text-xs">
 								<?php foreach ($busyTypes as $extension => $count): ?>
-									<li class="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-2"><span class="w-14 shrink-0 text-right font-mono text-slate-700"><?= (int) $count ?></span><span class="min-w-0 flex-1 font-mono text-slate-500">*.<?= $h($extension) ?></span><?php if ($activityCanEdit && $ignoreText !== null): ?><button type="button" class="shrink-0 text-amber-700 hover:text-blue-700" data-ignore-add="*.<?= $h($extension) ?>">Ignore</button><?php endif; ?></li>
+									<li class="flex items-center gap-3 rounded-lg bg-slate-950/40 px-3 py-2"><span class="w-14 shrink-0 text-right font-mono text-slate-300"><?= (int) $count ?></span><span class="min-w-0 flex-1 font-mono text-slate-400">*.<?= $h($extension) ?></span><?php if ($activityCanEdit && $ignoreText !== null): ?><button type="button" class="shrink-0 text-amber-200 hover:text-white" data-ignore-add="*.<?= $h($extension) ?>">Ignore</button><?php endif; ?></li>
 								<?php endforeach; ?>
 								<?php if (!$busyTypes): ?><li class="px-3 py-2 text-slate-500">No files with an extension.</li><?php endif; ?>
 							</ul>
@@ -252,13 +252,13 @@ require_once __DIR__ . '/header.php';
 				<?php if ($activityCanEdit): ?>
 					<form method="post" class="mt-5 grid gap-4 lg:grid-cols-2">
 						<input type="hidden" name="csrf_token" value="<?= $h(csrf_token()) ?>"><input type="hidden" name="action" value="save_folders"><input type="hidden" name="id" value="<?= (int) $selectedDevice['id'] ?>">
-						<label class="text-sm text-slate-500">Extra folders to monitor on this PC (one full path per line, for example <code>D:\Lab\Projects</code> or <code>\\server\class</code>; at most <?= AGENT_MAX_EXTRA_FOLDERS ?>)<textarea name="folders" rows="4" class="<?= $inputClass ?> font-mono text-xs"><?= $h($selectedDevice['activity_folders'] ?? '') ?></textarea></label>
+						<label class="text-sm text-slate-400">Extra folders to monitor on this PC (one full path per line, for example <code>D:\Lab\Projects</code> or <code>\\server\class</code>; at most <?= AGENT_MAX_EXTRA_FOLDERS ?>)<textarea name="folders" rows="4" class="<?= $inputClass ?> font-mono text-xs"><?= $h($selectedDevice['activity_folders'] ?? '') ?></textarea></label>
 						<?php if ($ignoreText !== null): ?>
-							<label class="text-sm text-slate-500">Ignore on this PC (one per line: a name such as <code>*.log</code> or <code>node_modules</code>, or a full folder path such as <code>C:\Users\me\Documents\Cache</code>; at most <?= AGENT_MAX_IGNORE_PATTERNS ?>)<textarea name="ignore" rows="4" class="<?= $inputClass ?> font-mono text-xs" data-ignore-list><?= $h($ignoreText) ?></textarea></label>
+							<label class="text-sm text-slate-400">Ignore on this PC (one per line: a name such as <code>*.log</code> or <code>node_modules</code>, or a full folder path such as <code>C:\Users\me\Documents\Cache</code>; at most <?= AGENT_MAX_IGNORE_PATTERNS ?>)<textarea name="ignore" rows="4" class="<?= $inputClass ?> font-mono text-xs" data-ignore-list><?= $h($ignoreText) ?></textarea></label>
 						<?php else: ?>
-							<p class="text-sm text-amber-700">To ignore files and folders on this PC, run database/migrations/phase14_activity_ignore.sql first (SETUP-GUIDE.md, Change 20).</p>
+							<p class="text-sm text-amber-200">To ignore files and folders on this PC, run database/migrations/phase14_activity_ignore.sql first (SETUP-GUIDE.md, Change 20).</p>
 						<?php endif; ?>
-						<div class="lg:col-span-2"><button class="rounded-lg border border-blue-300 px-5 py-3 text-sm font-bold text-blue-700 hover:bg-blue-50" type="submit">Save Settings</button>
+						<div class="lg:col-span-2"><button class="rounded-xl border border-violet-300/40 px-5 py-3 text-sm font-bold text-violet-200 hover:bg-violet-300/10" type="submit">Save Settings</button>
 						<span class="ml-3 text-xs text-slate-500">The agent picks them up within a minute. Ignoring affects new events only; earlier events stay in the list.</span></div>
 					</form>
 					<script>
@@ -274,20 +274,20 @@ require_once __DIR__ . '/header.php';
 					});
 					</script>
 				<?php elseif ($ignoreText !== null && trim($ignoreText) !== ''): ?>
-					<div class="mt-5 text-sm text-slate-500">Ignored on this PC:<pre class="mt-2 whitespace-pre-wrap rounded-lg bg-white p-3 font-mono text-xs text-slate-700"><?= $h($ignoreText) ?></pre></div>
+					<div class="mt-5 text-sm text-slate-400">Ignored on this PC:<pre class="mt-2 whitespace-pre-wrap rounded-xl bg-slate-950/60 p-3 font-mono text-xs text-slate-300"><?= $h($ignoreText) ?></pre></div>
 				<?php endif; ?>
 			</section>
 		<?php endif; ?>
 
 		<div data-live-region="activity">
 		<?php if ($loadError): ?>
-			<div class="mt-8 rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">File activity is unavailable. Run database/migrations/phase13_file_activity.sql first (SETUP-GUIDE.md, Change 19).</div>
+			<div class="mt-8 rounded-2xl border border-red-300/20 bg-red-400/10 p-5 text-sm text-red-200">File activity is unavailable. Run database/migrations/phase13_file_activity.sql first (SETUP-GUIDE.md, Change 19).</div>
 		<?php elseif (!$activityEvents): ?>
-			<div class="mt-10 rounded-xl border border-slate-200 bg-white shadow-sm p-12 text-center text-slate-500"><?= $query ? 'No file activity matches these filters.' : 'No file activity has been reported yet.' ?></div>
+			<div class="mt-10 rounded-2xl border border-white/10 bg-white/[.03] p-12 text-center text-slate-500"><?= $query ? 'No file activity matches these filters.' : 'No file activity has been reported yet.' ?></div>
 		<?php else: ?>
-			<div class="mt-8 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm"><table class="w-full min-w-[1150px] text-left text-sm">
-				<thead class="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500"><tr><th class="px-5 py-4">Event</th><th class="px-5 py-4">File</th><th class="px-5 py-4">Device</th><th class="px-5 py-4">Happened</th><th class="px-5 py-4">Detected / Received</th></tr></thead>
-				<tbody class="divide-y divide-slate-100">
+			<div class="mt-8 overflow-x-auto rounded-2xl border border-white/10 bg-white/[.03]"><table class="w-full min-w-[1150px] text-left text-sm">
+				<thead class="border-b border-white/10 text-xs uppercase tracking-wider text-slate-500"><tr><th class="px-5 py-4">Event</th><th class="px-5 py-4">File</th><th class="px-5 py-4">Device</th><th class="px-5 py-4">Happened</th><th class="px-5 py-4">Detected / Received</th></tr></thead>
+				<tbody class="divide-y divide-white/5">
 				<?php foreach ($activityEvents as $event): ?>
 					<?php
                     $isChange = $event['old_path'] !== null && $event['new_path'] !== null && preg_match('/_(RENAMED|MOVED)$/', $event['event_type']) === 1;
@@ -296,17 +296,17 @@ require_once __DIR__ . '/header.php';
                         ? ($folderOf($event['old_path']) === $folderOf($event['new_path']) ? $event['new_path'] : $event['old_path'] . ' → ' . $event['new_path'])
                         : ($event['new_path'] ?? $event['old_path']);
                     ?>
-					<tr class="align-top text-slate-700" data-row-id="<?= (int) $event['id'] ?>">
-						<td class="whitespace-nowrap px-5 py-4"><span class="rounded-full border px-2 py-0.5 font-mono text-[11px] <?= $typeClass($event['event_type']) ?>"><?= $h($event['event_type']) ?></span><?php if ($event['source'] === 'reconciliation'): ?><p class="mt-2 text-[11px] uppercase tracking-wider text-amber-700" title="Found by comparing the folder with the agent's saved file list, for example after the agent was off.">Found later</p><?php endif; ?></td>
-						<td class="px-5 py-4"><p class="max-w-[420px] break-words font-semibold text-slate-900"><?= $h($name) ?></p><p class="mt-1 max-w-[420px] break-all font-mono text-xs text-slate-500"><?= $h($path) ?></p><p class="mt-1 text-xs text-slate-500"><?= $h(implode(' · ', array_filter([$event['folder_label'], $event['file_size'] !== null ? scanner_format_size((int) $event['file_size']) : null, $event['user_account'] ? 'User ' . $event['user_account'] : null]))) ?></p><?php if ($event['details']): ?><p class="mt-1 max-w-[420px] text-xs text-slate-500"><?= $h($event['details']) ?></p><?php endif; ?></td>
+					<tr class="align-top text-slate-300" data-row-id="<?= (int) $event['id'] ?>">
+						<td class="whitespace-nowrap px-5 py-4"><span class="rounded-full border px-2 py-0.5 font-mono text-[11px] <?= $typeClass($event['event_type']) ?>"><?= $h($event['event_type']) ?></span><?php if ($event['source'] === 'reconciliation'): ?><p class="mt-2 text-[11px] uppercase tracking-wider text-amber-200" title="Found by comparing the folder with the agent's saved file list, for example after the agent was off.">Found later</p><?php endif; ?></td>
+						<td class="px-5 py-4"><p class="max-w-[420px] break-words font-semibold text-white"><?= $h($name) ?></p><p class="mt-1 max-w-[420px] break-all font-mono text-xs text-slate-500"><?= $h($path) ?></p><p class="mt-1 text-xs text-slate-500"><?= $h(implode(' · ', array_filter([$event['folder_label'], $event['file_size'] !== null ? scanner_format_size((int) $event['file_size']) : null, $event['user_account'] ? 'User ' . $event['user_account'] : null]))) ?></p><?php if ($event['details']): ?><p class="mt-1 max-w-[420px] text-xs text-slate-400"><?= $h($event['details']) ?></p><?php endif; ?></td>
 						<td class="px-5 py-4"><?= $h($event['device_name']) ?><p class="mt-1 text-xs text-slate-500"><?= $h($event['hostname'] ?? '') ?></p></td>
-						<td class="whitespace-nowrap px-5 py-4"><?php if ($event['event_time_utc'] !== null): ?><span title="<?= $h($utcTitle($event['event_time_utc'])) ?>"><?= $h($localTime($event['event_time_utc'])) ?></span><p class="text-xs text-slate-500"><?= $h($timeSourceLabels[$event['time_source']] ?? (string) $event['time_source']) ?></p><?php else: ?><span class="text-slate-500">Exact time unknown</span><p class="text-xs text-slate-500" title="<?= $h($utcTitle($event['window_start_utc']) . ' – ' . $utcTitle($event['detected_at_utc'])) ?>"><?= $event['window_start_utc'] ? 'between ' . $h($localTime($event['window_start_utc'])) . '<br>and ' . $h($localTime($event['detected_at_utc'])) : 'before ' . $h($localTime($event['detected_at_utc'])) ?></p><?php endif; ?></td>
+						<td class="whitespace-nowrap px-5 py-4"><?php if ($event['event_time_utc'] !== null): ?><span title="<?= $h($utcTitle($event['event_time_utc'])) ?>"><?= $h($localTime($event['event_time_utc'])) ?></span><p class="text-xs text-slate-500"><?= $h($timeSourceLabels[$event['time_source']] ?? (string) $event['time_source']) ?></p><?php else: ?><span class="text-slate-400">Exact time unknown</span><p class="text-xs text-slate-500" title="<?= $h($utcTitle($event['window_start_utc']) . ' – ' . $utcTitle($event['detected_at_utc'])) ?>"><?= $event['window_start_utc'] ? 'between ' . $h($localTime($event['window_start_utc'])) . '<br>and ' . $h($localTime($event['detected_at_utc'])) : 'before ' . $h($localTime($event['detected_at_utc'])) ?></p><?php endif; ?></td>
 						<td class="whitespace-nowrap px-5 py-4 text-xs text-slate-500"><span title="<?= $h($utcTitle($event['detected_at_utc'])) ?>">Agent: <?= $h($localTime($event['detected_at_utc'])) ?></span><br><span title="<?= $h($utcTitle($event['received_at_utc'])) ?>">Server: <?= $h($localTime($event['received_at_utc'])) ?></span></td>
 					</tr>
 				<?php endforeach; ?>
 				</tbody>
 			</table></div>
-			<nav class="mt-6 flex items-center justify-between text-sm" aria-label="File activity pages"><span class="text-slate-500">Page <?= $page ?> of <?= $pages ?> (<?= $total ?> events)</span><div class="flex gap-2"><?php if ($page > 1): ?><a class="rounded-lg border border-slate-200 px-3 py-2 text-slate-700" href="<?= $h($pageUrl($page - 1)) ?>">Previous</a><?php endif; ?><?php if ($page < $pages): ?><a class="rounded-lg border border-slate-200 px-3 py-2 text-slate-700" href="<?= $h($pageUrl($page + 1)) ?>">Next</a><?php endif; ?></div></nav>
+			<nav class="mt-6 flex items-center justify-between text-sm" aria-label="File activity pages"><span class="text-slate-500">Page <?= $page ?> of <?= $pages ?> (<?= $total ?> events)</span><div class="flex gap-2"><?php if ($page > 1): ?><a class="rounded-lg border border-white/10 px-3 py-2 text-slate-300" href="<?= $h($pageUrl($page - 1)) ?>">Previous</a><?php endif; ?><?php if ($page < $pages): ?><a class="rounded-lg border border-white/10 px-3 py-2 text-slate-300" href="<?= $h($pageUrl($page + 1)) ?>">Next</a><?php endif; ?></div></nav>
 		<?php endif; ?>
 		</div>
 	</main>

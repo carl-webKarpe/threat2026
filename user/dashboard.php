@@ -8,30 +8,4 @@ require_role('user');
 $logoutToken = csrf_token();
 $pageTitle = 'User Dashboard';
 require_once __DIR__ . '/../includes/header.php';
-$h = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-?>
-<header class="border-b border-slate-200 bg-white">
-    <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 sm:px-10">
-        <a href="../index.php" class="flex items-center gap-3">
-            <span class="grid h-9 w-9 place-items-center rounded-lg bg-blue-600 text-white"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
-            <span class="text-base font-bold tracking-tight text-slate-900">MalDetect</span>
-        </a>
-        <div class="flex items-center gap-3">
-            <span class="hidden text-sm text-slate-600 sm:inline"><?= $h($user['full_name']) ?></span>
-            <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-200">User</span>
-            <form method="post" action="../logout.php"><input type="hidden" name="csrf_token" value="<?= $h($logoutToken) ?>"><button class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50" type="submit">Logout</button></form>
-        </div>
-    </div>
-</header>
-<main class="mx-auto max-w-6xl px-6 py-10 sm:px-10">
-    <h1 class="text-3xl font-bold tracking-tight text-slate-900">Welcome, <?= $h($user['full_name']) ?></h1>
-    <p class="mt-1 text-sm text-slate-500">Your authorized MalDetect workspace.</p>
-    <section class="mt-8 flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-emerald-50 text-emerald-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg></span>
-        <div>
-            <h2 class="text-base font-semibold text-slate-900">Access is active</h2>
-            <p class="mt-1 max-w-xl text-sm leading-6 text-slate-500">Features assigned to your account will appear here as the system grows. You do not have access to Superadmin or Admin-only pages.</p>
-        </div>
-    </section>
-</main>
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+?><main class="mx-auto min-h-screen max-w-6xl px-6 py-8 sm:px-10"><header class="flex flex-col justify-between gap-5 border-b border-white/10 pb-8 sm:flex-row sm:items-center"><div><a href="../index.php" class="font-mono text-sm tracking-[.18em]">MAL<span class="text-violet-300">DETECT</span></a><h1 class="mt-8 text-3xl font-bold">Welcome, <?= htmlspecialchars($user['full_name'], ENT_QUOTES, 'UTF-8') ?></h1><p class="mt-2 text-sm text-slate-400">Your authorized MalDetect workspace.</p></div><div class="flex items-center gap-4"><span class="rounded-full bg-violet-300/10 px-3 py-2 text-xs uppercase text-violet-200">User</span><form method="post" action="../logout.php"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars($logoutToken, ENT_QUOTES, 'UTF-8') ?>"><button class="rounded-xl border border-white/10 px-4 py-2 text-sm text-slate-300 hover:bg-white/10" type="submit">Logout</button></form></div></header><section class="mt-10 rounded-2xl border border-white/10 bg-white/[.04] p-8"><p class="mono text-xs tracking-[.18em] text-violet-300">ACCOUNT STATUS</p><h2 class="mt-3 text-xl font-bold">Access is active</h2><p class="mt-3 max-w-xl text-sm leading-7 text-slate-400">Features assigned to your account will appear here as the system grows. You do not have access to Superadmin or Admin-only pages.</p></section></main><?php require_once __DIR__ . '/../includes/footer.php'; ?>

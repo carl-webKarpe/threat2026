@@ -13,69 +13,69 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="flex min-h-screen flex-col lg:flex-row">
 	<div><?php require __DIR__ . '/../includes/admin_sidebar.php'; ?></div>
 	<main class="min-w-0 flex-1 p-6 sm:p-10">
-		<header class="border-b border-slate-200 pb-8">
-			<p class="text-xs font-semibold uppercase tracking-wider text-blue-700">SECURITY INTAKE</p>
-			<h1 class="mt-3 text-3xl font-bold tracking-tight text-slate-900">Scan a File</h1>
-			<p class="mt-2 max-w-2xl text-slate-500">Upload a file to prepare it for security analysis.</p>
+		<header class="border-b border-white/10 pb-8">
+			<p class="mono text-xs tracking-[.2em] text-violet-300">SECURITY INTAKE</p>
+			<h1 class="mt-3 text-3xl font-bold">Scan a File</h1>
+			<p class="mt-2 max-w-2xl text-slate-400">Upload a file to prepare it for security analysis.</p>
 		</header>
 
 		<section class="mt-8 max-w-4xl" aria-labelledby="upload-heading">
 			<h2 id="upload-heading" class="sr-only">File upload</h2>
 			<form id="scanner-form" data-upload-url="../scanner/upload.php" data-csrf-token="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>" novalidate>
-				<div id="drop-zone" class="rounded-xl border border-dashed border-blue-200 bg-blue-50 p-8 text-center transition-colors sm:p-16" tabindex="0" role="button" aria-label="Choose a file to upload">
-					<div class="mx-auto grid h-16 w-16 place-items-center rounded-xl border border-blue-200 bg-blue-50 text-2xl text-blue-700" aria-hidden="true">↑</div>
+				<div id="drop-zone" class="rounded-2xl border border-dashed border-violet-300/35 bg-violet-300/[.04] p-8 text-center transition-colors sm:p-16" tabindex="0" role="button" aria-label="Choose a file to upload">
+					<div class="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-violet-300/25 bg-violet-300/10 text-2xl text-violet-200" aria-hidden="true">↑</div>
 					<p class="mt-6 text-lg font-semibold">Drag &amp; Drop your file here</p>
 					<p class="mt-2 text-sm text-slate-500">or</p>
-					<label class="mt-4 inline-flex cursor-pointer items-center rounded-lg bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-700">
+					<label class="mt-4 inline-flex cursor-pointer items-center rounded-xl bg-violet-300 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-violet-200">
 						Browse File
 						<input id="file-input" class="sr-only" type="file" name="file" accept="<?= htmlspecialchars('.' . implode(',.', scanner_allowed_extensions()), ENT_QUOTES, 'UTF-8') ?>">
 					</label>
 					<p class="mt-5 text-xs text-slate-500">Maximum <?= htmlspecialchars(scanner_format_size(MAX_UPLOAD_SIZE), ENT_QUOTES, 'UTF-8') ?>. Supported documents, images, archives, executables, and scripts.</p>
-					<label class="mx-auto mt-6 flex max-w-xl items-start gap-3 text-left text-xs text-slate-500"><input id="privacy-acknowledged" class="mt-0.5" type="checkbox"><span>I understand that this file will be submitted to VirusTotal for analysis and may be shared according to VirusTotal policies.</span></label>
+					<label class="mx-auto mt-6 flex max-w-xl items-start gap-3 text-left text-xs text-slate-400"><input id="privacy-acknowledged" class="mt-0.5" type="checkbox"><span>I understand that this file will be submitted to VirusTotal for analysis and may be shared according to VirusTotal policies.</span></label>
 				</div>
 
-				<p id="upload-error" class="mt-4 hidden rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert"></p>
-				<div id="file-preview" class="mt-6 hidden rounded-xl border border-slate-200 bg-white shadow-sm p-5 sm:p-6">
+				<p id="upload-error" class="mt-4 hidden rounded-xl border border-red-300/20 bg-red-400/10 px-4 py-3 text-sm text-red-200" role="alert"></p>
+				<div id="file-preview" class="mt-6 hidden rounded-2xl border border-white/10 bg-white/[.04] p-5 sm:p-6">
 					<div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
 						<div class="min-w-0">
-							<p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">SELECTED FILE</p>
+							<p class="mono text-[10px] tracking-[.18em] text-slate-500">SELECTED FILE</p>
 							<p id="file-name" class="mt-2 truncate font-semibold"></p>
-							<p id="file-meta" class="mt-1 text-sm text-slate-500"></p>
+							<p id="file-meta" class="mt-1 text-sm text-slate-400"></p>
 						</div>
-						<button id="remove-file" type="button" class="shrink-0 rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-700 hover:border-red-300 hover:text-red-800">Remove File</button>
+						<button id="remove-file" type="button" class="shrink-0 rounded-xl border border-white/10 px-4 py-2 text-sm text-slate-300 hover:border-red-300/30 hover:text-red-200">Remove File</button>
 					</div>
-					<button id="upload-button" type="submit" class="mt-6 w-full rounded-lg bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">Upload &amp; Scan</button>
+					<button id="upload-button" type="submit" class="mt-6 w-full rounded-xl bg-emerald-300 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-50">Upload &amp; Scan</button>
 				</div>
 			</form>
-			<div id="scan-loading" class="mt-6 hidden rounded-xl border border-blue-200 bg-blue-50 p-8 text-center sm:p-12" role="status" aria-live="polite">
-				<div class="relative mx-auto grid h-20 w-20 place-items-center rounded-full border border-blue-200 text-3xl text-blue-700"><span class="absolute inset-0 animate-ping rounded-full border border-blue-200"></span><span aria-hidden="true">⌕</span></div>
-				<p class="mt-7 text-xs font-semibold uppercase tracking-wider text-blue-700">SCANNING FILE...</p>
+			<div id="scan-loading" class="mt-6 hidden rounded-2xl border border-violet-300/25 bg-violet-300/[.05] p-8 text-center sm:p-12" role="status" aria-live="polite">
+				<div class="relative mx-auto grid h-20 w-20 place-items-center rounded-full border border-violet-300/30 text-3xl text-violet-200"><span class="absolute inset-0 animate-ping rounded-full border border-violet-300/20"></span><span aria-hidden="true">⌕</span></div>
+				<p class="mono mt-7 text-xs tracking-[.2em] text-violet-300">SCANNING FILE...</p>
 				<h2 class="mt-3 text-2xl font-bold">MalDetect is analyzing your file</h2>
-				<p id="scan-file-name" class="mt-2 truncate text-sm text-blue-700"></p>
-				<p id="scan-status-message" class="mt-3 text-sm text-slate-500">Preparing your file...</p>
-				<div class="mx-auto mt-7 h-1 max-w-sm overflow-hidden rounded-full bg-slate-200"><div class="scan-progress h-full w-1/2 rounded-full bg-blue-600"></div></div>
+				<p id="scan-file-name" class="mt-2 truncate text-sm text-violet-200"></p>
+				<p id="scan-status-message" class="mt-3 text-sm text-slate-400">Preparing your file...</p>
+				<div class="mx-auto mt-7 h-1 max-w-sm overflow-hidden rounded-full bg-white/10"><div class="scan-progress h-full w-1/2 rounded-full bg-violet-300"></div></div>
 				<p class="mt-4 text-xs text-slate-500">This may take several minutes. Please keep this page open.</p>
 			</div>
-			<div id="upload-result" class="mt-6 hidden rounded-xl border border-emerald-200 bg-emerald-50 p-6" role="status" aria-live="polite">
-				<p class="text-xs font-semibold uppercase tracking-wider text-emerald-600">SCAN COMPLETE</p>
+			<div id="upload-result" class="mt-6 hidden rounded-2xl border border-emerald-300/25 bg-emerald-300/[.06] p-6" role="status" aria-live="polite">
+				<p class="mono text-xs tracking-[.18em] text-emerald-300">SCAN COMPLETE</p>
 				<h2 id="result-headline" class="mt-3 text-2xl font-bold">Analysis complete</h2>
 				<dl class="mt-5 grid gap-4 text-sm sm:grid-cols-2">
 					<div><dt class="text-slate-500">File Name</dt><dd data-result="filename" class="mt-1 break-words font-semibold"></dd></div>
 					<div><dt class="text-slate-500">File Size</dt><dd data-result="size" class="mt-1 font-semibold"></dd></div>
 					<div><dt class="text-slate-500">File Type</dt><dd data-result="mime_type" class="mt-1 break-words font-semibold"></dd></div>
-					<div><dt class="text-slate-500">Status</dt><dd data-result="status" class="mt-1 font-semibold text-emerald-700"></dd></div>
+					<div><dt class="text-slate-500">Status</dt><dd data-result="status" class="mt-1 font-semibold text-emerald-200"></dd></div>
 					<div><dt class="text-slate-500">Risk Level</dt><dd data-result="risk_level" class="mt-1 font-semibold"></dd></div>
 					<div><dt class="text-slate-500">Safety Indicator</dt><dd data-result="safety_percentage" class="mt-1 font-semibold"></dd></div>
 					<div><dt class="text-slate-500">Threat Information</dt><dd data-result="threat_name" class="mt-1 break-words font-semibold"></dd></div>
 					<div><dt class="text-slate-500">Detection Count</dt><dd data-result="detection_count" class="mt-1 font-semibold"></dd></div>
 					<div><dt class="text-slate-500">Total Engines</dt><dd data-result="total_engines" class="mt-1 font-semibold"></dd></div>
-					<div><dt class="text-slate-500">Scanned At</dt><dd data-result="scanned_at" class="mt-1 font-semibold text-slate-500"></dd></div>
-					<div class="sm:col-span-2"><dt class="text-slate-500">SHA-256</dt><dd data-result="sha256" class="mt-1 break-all font-mono text-xs text-blue-700"></dd></div>
-					<div class="sm:col-span-2"><dt class="text-slate-500">Detection Results</dt><dd class="mt-1 grid grid-cols-2 gap-2 text-slate-700 sm:grid-cols-4"><span>Malicious: <strong data-result="malicious_count"></strong></span><span>Suspicious: <strong data-result="suspicious_count"></strong></span><span>Harmless: <strong data-result="harmless_count"></strong></span><span>Undetected: <strong data-result="undetected_count"></strong></span></dd></div>
-					<div class="sm:col-span-2"><dt class="text-slate-500">Detection Information</dt><dd data-result="summary" class="mt-1 text-slate-700"></dd></div>
-					<div class="sm:col-span-2"><dt class="text-slate-500">Scan Date</dt><dd data-result="scanned_at" class="mt-1 text-slate-700"></dd></div>
+					<div><dt class="text-slate-500">Scanned At</dt><dd data-result="scanned_at" class="mt-1 font-semibold text-slate-400"></dd></div>
+					<div class="sm:col-span-2"><dt class="text-slate-500">SHA-256</dt><dd data-result="sha256" class="mt-1 break-all font-mono text-xs text-violet-200"></dd></div>
+					<div class="sm:col-span-2"><dt class="text-slate-500">Detection Results</dt><dd class="mt-1 grid grid-cols-2 gap-2 text-slate-300 sm:grid-cols-4"><span>Malicious: <strong data-result="malicious_count"></strong></span><span>Suspicious: <strong data-result="suspicious_count"></strong></span><span>Harmless: <strong data-result="harmless_count"></strong></span><span>Undetected: <strong data-result="undetected_count"></strong></span></dd></div>
+					<div class="sm:col-span-2"><dt class="text-slate-500">Detection Information</dt><dd data-result="summary" class="mt-1 text-slate-300"></dd></div>
+					<div class="sm:col-span-2"><dt class="text-slate-500">Scan Date</dt><dd data-result="scanned_at" class="mt-1 text-slate-300"></dd></div>
 				</dl>
-				<button id="new-scan" type="button" class="mt-7 rounded-lg border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-800 hover:border-blue-300 hover:text-blue-700">Scan Another File</button>
+				<button id="new-scan" type="button" class="mt-7 rounded-xl border border-white/10 px-5 py-3 text-sm font-semibold text-slate-200 hover:border-violet-300/40 hover:text-white">Scan Another File</button>
 			</div>
 		</section>
 	</main>
@@ -158,8 +158,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		preview.classList.remove('hidden'); showError('');
 	};
 	input.addEventListener('change', () => inspectFile(input.files[0]));
-	['dragenter', 'dragover'].forEach((eventName) => dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.classList.add('border-blue-300', 'bg-blue-50'); }));
-	['dragleave', 'drop'].forEach((eventName) => dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.classList.remove('border-blue-300', 'bg-blue-50'); }));
+	['dragenter', 'dragover'].forEach((eventName) => dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.classList.add('border-violet-200', 'bg-violet-300/10'); }));
+	['dragleave', 'drop'].forEach((eventName) => dropZone.addEventListener(eventName, (event) => { event.preventDefault(); dropZone.classList.remove('border-violet-200', 'bg-violet-300/10'); }));
 	dropZone.addEventListener('drop', (event) => inspectFile(event.dataTransfer.files[0]));
 	dropZone.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); input.click(); } });
 	document.querySelector('#remove-file').addEventListener('click', resetSelection);

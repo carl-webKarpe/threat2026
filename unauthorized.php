@@ -18,17 +18,14 @@ $dashboard = match ($_SESSION['role'] ?? '') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Access Denied | MalDetect</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } } };</script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <?php require __DIR__ . '/includes/theme_styles.php'; ?>
 </head>
-<body class="shell min-h-screen text-slate-800 antialiased">
+<body class="min-h-screen bg-slate-950 text-white antialiased">
     <main class="grid min-h-screen place-items-center px-6">
-        <section class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-lg">
-            <span class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-red-50 text-red-600"><svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
-            <h1 class="mt-5 text-2xl font-bold tracking-tight text-slate-900">Access denied</h1>
-            <p class="mt-2 text-sm text-slate-500">You do not have permission to access this page.</p>
-            <a href="<?= htmlspecialchars($dashboard, ENT_QUOTES, 'UTF-8') ?>" class="mt-8 inline-flex rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">Return to dashboard</a>
+        <section class="w-full max-w-lg rounded-3xl border border-red-300/20 bg-slate-900/80 p-10 text-center shadow-2xl">
+            <p class="font-mono text-xs tracking-[.25em] text-red-300">SECURITY GATE</p>
+            <h1 class="mt-5 text-4xl font-bold">ACCESS DENIED</h1>
+            <p class="mt-4 text-slate-300">You do not have permission to access this page.</p>
+            <a href="<?= htmlspecialchars($dashboard, ENT_QUOTES, 'UTF-8') ?>" class="mt-8 inline-flex rounded-xl bg-violet-400 px-5 py-3 font-semibold text-slate-950 transition hover:bg-white">Return to Dashboard</a>
         </section>
     </main>
 </body>
