@@ -75,11 +75,11 @@ require_once __DIR__ . '/../includes/header.php';
 		<p class="mono text-xs tracking-[.2em] text-violet-300">AUDIT TRAIL</p>
 		<h1 class="mt-3 text-3xl font-bold">Scan History</h1>
 		<p class="mt-2 text-slate-400">Real VirusTotal analysis records and engine results.</p>
-		<form class="mt-8 grid gap-3 rounded-2xl border border-white/10 bg-white/[.03] p-5 sm:grid-cols-4" method="get">
+		<form class="mt-8 grid gap-3 rounded-2xl border border-white/10 bg-white/[.03] p-5 sm:grid-cols-4" method="get" data-auto-filter>
 			<label class="text-sm text-slate-400 sm:col-span-2">Search filename<input class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none focus:border-violet-300/50" type="search" name="search" value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" placeholder="pizza.jpg"></label>
 			<label class="text-sm text-slate-400">Status<select class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none focus:border-violet-300/50" name="status"><option value="">All</option><?php foreach ($allowedStatuses as $option): ?><option value="<?= htmlspecialchars($option, ENT_QUOTES, 'UTF-8') ?>" <?= $status === $option ? 'selected' : '' ?>><?= htmlspecialchars(ucfirst($option), ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></label>
 			<label class="text-sm text-slate-400">Risk<select class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none focus:border-violet-300/50" name="risk"><option value="">All</option><?php foreach ($allowedRisks as $option): ?><option value="<?= htmlspecialchars($option, ENT_QUOTES, 'UTF-8') ?>" <?= $risk === $option ? 'selected' : '' ?>><?= htmlspecialchars($option, ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></label>
-			<button class="rounded-xl bg-violet-300 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-violet-200 sm:col-span-4 sm:justify-self-end" type="submit">Apply Filters</button>
+			<noscript><button class="rounded-xl bg-violet-300 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-violet-200" type="submit">Apply Filters</button></noscript>
 		</form>
 		<?php if ($historyError): ?>
 			<div class="mt-8 rounded-2xl border border-red-300/20 bg-red-400/10 p-5 text-sm text-red-200">Scan history is temporarily unavailable.</div>
@@ -93,4 +93,5 @@ require_once __DIR__ . '/../includes/header.php';
 		<?php endif; ?>
 	</main>
 </div>
+<?php require __DIR__ . '/../includes/auto_filter.php'; ?>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

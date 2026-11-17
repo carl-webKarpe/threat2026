@@ -22,6 +22,7 @@ $folderFilter = trim((string) ($_GET['folder'] ?? ''));
 $fromFilter = (string) ($_GET['from'] ?? '');
 $toFilter = (string) ($_GET['to'] ?? '');
 $typeLabels = [
+    'DOWNLOADED' => 'Downloaded (new file in Downloads)',
     'FILE_CREATED' => 'File created', 'FILE_MODIFIED' => 'File modified', 'FILE_DELETED' => 'File deleted',
     'FILE_RENAMED' => 'File renamed', 'FILE_MOVED' => 'File moved', 'FOLDER_CREATED' => 'Folder created',
     'FOLDER_DELETED' => 'Folder deleted', 'FOLDER_RENAMED' => 'Folder renamed', 'FOLDER_MOVED' => 'Folder moved',
@@ -47,7 +48,9 @@ if (is_int($deviceFilter)) {
     $where[] = 'file_activity_events.device_id = :device_id';
     $parameters['device_id'] = $deviceFilter;
 }
-if (in_array($typeFilter, AGENT_ACTIVITY_EVENT_TYPES, true)) {
+if ($typeFilter === 'DOWNLOADED') {
+    $where[] = "file_activity_events.event_type = 'FILE_CREATED' AND file_activity_events.folder_label = 'Downloads'";
+} elseif (in_array($typeFilter, AGENT_ACTIVITY_EVENT_TYPES, true)) {
     $where[] = 'file_activity_events.event_type = :event_type';
     $parameters['event_type'] = $typeFilter;
 } else {
@@ -164,12 +167,21 @@ $localTime = static function (?string $utc) use ($localZone, $utcZone): string {
     return (new DateTimeImmutable($utc, $utcZone))->setTimezone($localZone)->format('Y-m-d H:i:s');
 };
 $utcTitle = static fn (?string $utc): string => $utc ? $utc . ' UTC' : '';
-$typeClass = static fn (string $type): string => match (substr($type, strpos($type, '_') + 1)) {
-    'DELETED' => 'border-red-300/30 text-red-200',
-    'RENAMED' => 'border-sky-300/30 text-sky-200',
-    'MOVED' => 'border-violet-300/30 text-violet-200',
-    'CREATED' => 'border-emerald-300/30 text-emerald-200',
-    default => 'border-amber-300/30 text-amber-200',
+// Colour coding: every action has its own colour, used for the badge, the stripe on the left of the row and the legend.
+// A new file in the Downloads folder is shown as "Downloaded".
+$eventStyles = [
+    'deleted' => ['Deleted', 'border-red-400/50 bg-red-500/15 text-red-200', 'border-l-red-400', 'bg-red-400'],
+    'downloaded' => ['Downloaded', 'border-cyan-400/50 bg-cyan-500/15 text-cyan-200', 'border-l-cyan-400', 'bg-cyan-400'],
+    'renamed' => ['Renamed', 'border-amber-400/50 bg-amber-500/15 text-amber-200', 'border-l-amber-400', 'bg-amber-400'],
+    'moved' => ['Moved', 'border-violet-400/50 bg-violet-500/15 text-violet-200', 'border-l-violet-400', 'bg-violet-400'],
+    'created' => ['Created', 'border-emerald-400/50 bg-emerald-500/15 text-emerald-200', 'border-l-emerald-400', 'bg-emerald-400'],
+    'modified' => ['Modified', 'border-slate-400/40 bg-slate-500/15 text-slate-200', 'border-l-slate-500', 'bg-slate-400'],
+];
+$eventCategory = static function (array $event): string {
+    if ($event['event_type'] === 'FILE_CREATED' && $event['folder_label'] === 'Downloads') {
+        return 'downloaded';
+    }
+    return strtolower(substr($event['event_type'], strpos($event['event_type'], '_') + 1));
 };
 $folderOf = static function (?string $path): string {
     if ($path === null) {
@@ -205,7 +217,7 @@ require_once __DIR__ . '/header.php';
 		<?php if ($activityNotice !== ''): ?><p class="mt-6 rounded-xl border border-emerald-300/20 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-200" role="status"><?= $h($activityNotice) ?></p><?php endif; ?>
 		<?php if ($activityError !== ''): ?><p class="mt-6 rounded-xl border border-red-300/20 bg-red-400/10 px-4 py-3 text-sm text-red-200" role="alert"><?= $h($activityError) ?></p><?php endif; ?>
 
-		<form class="mt-8 grid gap-3 rounded-2xl border border-white/10 bg-white/[.03] p-5 sm:grid-cols-4" method="get">
+		<form class="mt-8 grid gap-3 rounded-2xl border border-white/10 bg-white/[.03] p-5 sm:grid-cols-4" method="get" data-auto-filter>
 			<label class="text-sm text-slate-400">Device (PC)<select class="<?= $inputClass ?>" name="device"><option value="">All</option><?php foreach ($activityDevices as $device): ?><option value="<?= (int) $device['id'] ?>" <?= $deviceFilter === (int) $device['id'] ? 'selected' : '' ?>><?= $h($device['name']) ?></option><?php endforeach; ?></select></label>
 			<label class="text-sm text-slate-400">Event type<select class="<?= $inputClass ?>" name="type"><option value="">All</option><?php foreach ($typeLabels as $value => $label): ?><option value="<?= $h($value) ?>" <?= $typeFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach; ?></select></label>
 			<label class="text-sm text-slate-400">File name<input class="<?= $inputClass ?>" type="search" name="name" value="<?= $h($nameFilter) ?>" placeholder="e.g. report.docx"></label>
@@ -213,7 +225,7 @@ require_once __DIR__ . '/header.php';
 			<label class="text-sm text-slate-400">Detected from<input class="<?= $inputClass ?>" type="date" name="from" value="<?= $h($fromFilter) ?>"></label>
 			<label class="text-sm text-slate-400">Detected to<input class="<?= $inputClass ?>" type="date" name="to" value="<?= $h($toFilter) ?>"></label>
 			<label class="text-sm text-slate-400">Source<select class="<?= $inputClass ?>" name="source"><option value="">All</option><?php foreach ($sourceLabels as $value => $label): ?><option value="<?= $h($value) ?>" <?= $sourceFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach; ?></select></label>
-			<div class="flex items-end justify-end gap-3"><a class="rounded-xl border border-white/10 px-5 py-3 text-sm text-slate-300 hover:bg-white/5" href="activity.php">Clear</a><button class="rounded-xl bg-violet-300 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-violet-200" type="submit">Apply Filters</button></div>
+			<div class="flex items-end justify-end gap-3"><a class="rounded-xl border border-white/10 px-5 py-3 text-sm text-slate-300 hover:bg-white/5" href="activity.php">Clear</a><noscript><button class="rounded-xl bg-violet-300 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-violet-200" type="submit">Apply Filters</button></noscript></div>
 		</form>
 
 		<?php if (is_array($selectedDevice)): ?>
@@ -285,7 +297,8 @@ require_once __DIR__ . '/header.php';
 		<?php elseif (!$activityEvents): ?>
 			<div class="mt-10 rounded-2xl border border-white/10 bg-white/[.03] p-12 text-center text-slate-500"><?= $query ? 'No file activity matches these filters.' : 'No file activity has been reported yet.' ?></div>
 		<?php else: ?>
-			<div class="mt-8 overflow-x-auto rounded-2xl border border-white/10 bg-white/[.03]"><table class="w-full min-w-[1150px] text-left text-sm">
+			<div class="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-400" aria-label="Colour legend"><?php foreach ($eventStyles as [$styleLabel, , , $dotClass]): ?><span class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full <?= $dotClass ?>"></span><?= $h($styleLabel) ?></span><?php endforeach; ?></div>
+			<div class="mt-3 overflow-x-auto rounded-2xl border border-white/10 bg-white/[.03]"><table class="w-full min-w-[1150px] text-left text-sm">
 				<thead class="border-b border-white/10 text-xs uppercase tracking-wider text-slate-500"><tr><th class="px-5 py-4">Event</th><th class="px-5 py-4">File</th><th class="px-5 py-4">Device</th><th class="px-5 py-4">Happened</th><th class="px-5 py-4">Detected / Received</th></tr></thead>
 				<tbody class="divide-y divide-white/5">
 				<?php foreach ($activityEvents as $event): ?>
@@ -297,7 +310,8 @@ require_once __DIR__ . '/header.php';
                         : ($event['new_path'] ?? $event['old_path']);
                     ?>
 					<tr class="align-top text-slate-300" data-row-id="<?= (int) $event['id'] ?>">
-						<td class="whitespace-nowrap px-5 py-4"><span class="rounded-full border px-2 py-0.5 font-mono text-[11px] <?= $typeClass($event['event_type']) ?>"><?= $h($event['event_type']) ?></span><?php if ($event['source'] === 'reconciliation'): ?><p class="mt-2 text-[11px] uppercase tracking-wider text-amber-200" title="Found by comparing the folder with the agent's saved file list, for example after the agent was off.">Found later</p><?php endif; ?></td>
+						<?php [$styleLabel, $badgeClass, $stripeClass] = $eventStyles[$eventCategory($event)] ?? $eventStyles['modified']; ?>
+						<td class="whitespace-nowrap border-l-4 px-5 py-4 <?= $stripeClass ?>"><span class="inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold <?= $badgeClass ?>"><?= $h(str_starts_with($event['event_type'], 'FOLDER_') ? 'Folder ' . strtolower($styleLabel) : $styleLabel) ?></span><p class="mt-1.5 font-mono text-[10px] text-slate-500"><?= $h($event['event_type']) ?></p><?php if ($event['source'] === 'reconciliation'): ?><p class="mt-2 text-[11px] uppercase tracking-wider text-amber-200" title="Found by comparing the folder with the agent's saved file list, for example after the agent was off.">Found later</p><?php endif; ?></td>
 						<td class="px-5 py-4"><p class="max-w-[420px] break-words font-semibold text-white"><?= $h($name) ?></p><p class="mt-1 max-w-[420px] break-all font-mono text-xs text-slate-500"><?= $h($path) ?></p><p class="mt-1 text-xs text-slate-500"><?= $h(implode(' · ', array_filter([$event['folder_label'], $event['file_size'] !== null ? scanner_format_size((int) $event['file_size']) : null, $event['user_account'] ? 'User ' . $event['user_account'] : null]))) ?></p><?php if ($event['details']): ?><p class="mt-1 max-w-[420px] text-xs text-slate-400"><?= $h($event['details']) ?></p><?php endif; ?></td>
 						<td class="px-5 py-4"><?= $h($event['device_name']) ?><p class="mt-1 text-xs text-slate-500"><?= $h($event['hostname'] ?? '') ?></p></td>
 						<td class="whitespace-nowrap px-5 py-4"><?php if ($event['event_time_utc'] !== null): ?><span title="<?= $h($utcTitle($event['event_time_utc'])) ?>"><?= $h($localTime($event['event_time_utc'])) ?></span><p class="text-xs text-slate-500"><?= $h($timeSourceLabels[$event['time_source']] ?? (string) $event['time_source']) ?></p><?php else: ?><span class="text-slate-400">Exact time unknown</span><p class="text-xs text-slate-500" title="<?= $h($utcTitle($event['window_start_utc']) . ' – ' . $utcTitle($event['detected_at_utc'])) ?>"><?= $event['window_start_utc'] ? 'between ' . $h($localTime($event['window_start_utc'])) . '<br>and ' . $h($localTime($event['detected_at_utc'])) : 'before ' . $h($localTime($event['detected_at_utc'])) ?></p><?php endif; ?></td>
@@ -312,4 +326,5 @@ require_once __DIR__ . '/header.php';
 	</main>
 </div>
 <?php require __DIR__ . '/live_refresh.php'; ?>
+<?php require __DIR__ . '/auto_filter.php'; ?>
 <?php require_once __DIR__ . '/footer.php'; ?>

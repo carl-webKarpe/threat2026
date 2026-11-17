@@ -930,6 +930,18 @@ Your accounts and the number of devices must appear. The old database `maldetect
 
 **New PC or empty database:** skip Step 2 and only run `database\maldetect_full_install.sql`; it creates `maldetect2026_db` with the accounts `superadmin`, `admin` and `user` (password `ChangeMe123!`).
 
+### Change 26: Colour-coded file activity and automatic filters
+
+**What changed:**
+
+- **File Activity** is colour coded. Each action has its own colour, shown as a badge, a stripe on the left of the row, and a legend above the list: **red** = deleted, **cyan** = downloaded (a new file in the Downloads folder), **yellow** = renamed, **purple** = moved, **green** = created, **gray** = modified. The technical name (for example `FILE_RENAMED`) is shown in small text under the badge.
+- New choice in **Event type**: **Downloaded (new file in Downloads)**.
+- **Filters apply by themselves** on File Activity, Device Detections, Scan History and Reports: a drop-down or date applies as soon as you change it, and a search box applies when you stop typing for a moment (the cursor stays in the box). The **Apply Filters** buttons are gone. **Clear** (File Activity), **Download CSV** and **Print** (Reports) are still there.
+
+**SQL to run:** none.
+
+**Step 1: Get the code.** Do Part 1, then press **Ctrl+F5** in the browser.
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)

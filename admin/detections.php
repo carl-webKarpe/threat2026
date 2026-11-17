@@ -87,12 +87,12 @@ require_once __DIR__ . '/../includes/header.php';
 		<p class="mono text-xs tracking-[.2em] text-violet-300">ENDPOINT ACTIVITY</p>
 		<div class="mt-3 flex flex-wrap items-baseline gap-4"><h1 class="text-3xl font-bold">Device Detections</h1><span data-live-indicator class="text-xs text-emerald-300">● Live</span></div>
 		<p class="mt-2 text-slate-400">Files downloaded on registered devices and their VirusTotal verdicts.</p>
-		<form class="mt-8 grid gap-3 rounded-2xl border border-white/10 bg-white/[.03] p-5 sm:grid-cols-5" method="get">
+		<form class="mt-8 grid gap-3 rounded-2xl border border-white/10 bg-white/[.03] p-5 sm:grid-cols-5" method="get" data-auto-filter>
 			<label class="text-sm text-slate-400 sm:col-span-2">File name or SHA-256<input class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none focus:border-violet-300/50" type="search" name="search" value="<?= $h($search) ?>"></label>
 			<label class="text-sm text-slate-400">Device<select class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100" name="device"><option value="">All</option><?php foreach ($devices as $device): ?><option value="<?= (int) $device['id'] ?>" <?= $deviceFilter === (int) $device['id'] ? 'selected' : '' ?>><?= $h($device['name']) ?></option><?php endforeach; ?></select></label>
 			<label class="text-sm text-slate-400">Result<select class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100" name="result"><option value="">All</option><?php foreach ($allowedResults as $value => $label): ?><option value="<?= $h($value) ?>" <?= $resultFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach; ?></select></label>
 			<label class="text-sm text-slate-400">Source<select class="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-slate-100" name="trigger"><option value="">All</option><?php foreach ($allowedTriggers as $value => $label): ?><option value="<?= $h($value) ?>" <?= $triggerFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option><?php endforeach; ?></select></label>
-			<button class="rounded-xl bg-violet-300 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-violet-200 sm:col-span-5 sm:justify-self-end" type="submit">Apply Filters</button>
+			<noscript><button class="rounded-xl bg-violet-300 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-violet-200" type="submit">Apply Filters</button></noscript>
 		</form>
 		<div data-live-region="detections">
 		<?php if ($loadError): ?>
@@ -122,4 +122,5 @@ require_once __DIR__ . '/../includes/header.php';
 	</main>
 </div>
 <?php require __DIR__ . '/../includes/live_refresh.php'; ?>
+<?php require __DIR__ . '/../includes/auto_filter.php'; ?>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
