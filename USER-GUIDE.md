@@ -18,6 +18,8 @@ For installing the server and the database, see [SETUP-GUIDE.md](SETUP-GUIDE.md)
 
 ## Part 1: Register a PC and get its token
 
+Short version with every command for a new PC, including PCs where Windows blocks the installer: [ADD-PC-GUIDE.md](ADD-PC-GUIDE.md).
+
 Do this on the **server**, once per monitored PC.
 
 **Step 1. Open MalDetect and sign in.**

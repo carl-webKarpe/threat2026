@@ -4,6 +4,8 @@
 
 **Server IP changed, or moving between Wi-Fi, LAN cable and hotspot? Follow [NETWORK-GUIDE.md](NETWORK-GUIDE.md).**
 
+**Adding another PC to monitor? Follow [ADD-PC-GUIDE.md](ADD-PC-GUIDE.md): what to do on the server, what to copy, and how to install the agent.**
+
 **Using the system? Follow [USER-GUIDE.md](USER-GUIDE.md): register a PC, install the agent, watch downloads, scan, alerts, reports and file activity.**
 
 MalDetect checks files for malware with the VirusTotal API in two ways:
