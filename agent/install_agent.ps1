@@ -9,14 +9,14 @@
         powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -Token mdt_...
 
     Or double-click install_agent.bat in the same folder: it asks for the token.
-    The server address is http://192.168.0.63/threat2026 unless -ServerUrl gives another one.
+    The server address is http://10.124.78.156/threat2026 unless -ServerUrl gives another one.
     On a PC that already has the agent, -Token can be left out: the installed agent's token is kept.
 
     Running it again updates the agent and its settings (for example a new token or server address).
     To remove the agent, run uninstall_agent.ps1.
 
 .PARAMETER ServerUrl
-    Optional. Address of the MalDetect server. Default: http://192.168.0.63/threat2026 (https://... with -CaFile).
+    Optional. Address of the MalDetect server. Default: http://10.124.78.156/threat2026 (https://... with -CaFile).
 .PARAMETER Token
     The device token from Admin > Devices (starts with mdt_). Optional when the agent is already installed.
 .PARAMETER CaFile
@@ -27,7 +27,7 @@
 #>
 param(
     # The MalDetect server's address. Change it here if the server gets another IP.
-    [Parameter(Position = 1)][string]$ServerUrl = 'http://192.168.0.63/threat2026',
+    [Parameter(Position = 1)][string]$ServerUrl = 'http://10.124.78.156/threat2026',
     # Position 0: the token also works without writing -Token in front of it.
     [Parameter(Position = 0)][string]$Token = '',
     [string]$CaFile = '',
@@ -48,7 +48,7 @@ if (-not $isAdmin) {
 }
 $Token = $Token.Trim()
 # Swapped by mistake (token given where the server address goes): put them in the right place.
-if ($ServerUrl -like 'mdt_*' -and -not $Token) { $Token = $ServerUrl.Trim(); $ServerUrl = 'http://192.168.0.63/threat2026' }
+if ($ServerUrl -like 'mdt_*' -and -not $Token) { $Token = $ServerUrl.Trim(); $ServerUrl = 'http://10.124.78.156/threat2026' }
 $existingConfig = Join-Path $InstallDir 'config.json'
 if (-not $Token -and (Test-Path $existingConfig)) {
     # Already installed: keep this PC's token (the agent is only being updated).
@@ -64,7 +64,7 @@ if ($Token -notmatch '^mdt_[0-9a-f]{64}$') {
 $ServerUrl = $ServerUrl.Trim().TrimEnd('/')
 Write-Host "Server: $ServerUrl" -ForegroundColor Gray
 if ($ServerUrl -notmatch '^https?://') {
-    throw 'ServerUrl must start with http:// or https://, for example http://192.168.0.63/threat2026'
+    throw 'ServerUrl must start with http:// or https://, for example http://10.124.78.156/threat2026'
 }
 
 if (-not $CaFile -and $ServerUrl -like 'https://*' -and (Test-Path (Join-Path $SourceDir 'maldetect-ca.crt'))) {

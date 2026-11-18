@@ -557,7 +557,7 @@ It takes 1–2 minutes. When it says **Done**, the folder `agent\dist` contains 
 
    ```powershell
    cd D:\dist
-   powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://192.168.0.63/threat2026 -Token mdt_THE_TOKEN
+   powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://10.124.78.156/threat2026 -Token mdt_THE_TOKEN
    ```
 
 4. It prints **MalDetect agent installed.** and the last lines of the log. On the server's **Devices** page the PC shows **● Online**.
@@ -582,32 +582,32 @@ Add `-RemoveFiles` to also delete `C:\MalDetectAgent`.
 
 **Step 1: Get the code.** Do Part 1.
 
-**Step 2: Run the setup on Laptop 1 (the server).** Find its IP with `ipconfig` (for example `192.168.0.63`). Open **PowerShell as Administrator**:
+**Step 2: Run the setup on Laptop 1 (the server).** Find its IP with `ipconfig` (for example `10.124.78.156`). Open **PowerShell as Administrator**:
 
 ```powershell
 cd C:\xampp1\htdocs\threat2026
-powershell -ExecutionPolicy Bypass -File .\tools\setup_https.ps1 -ServerIp 192.168.0.63
+powershell -ExecutionPolicy Bypass -File .\tools\setup_https.ps1 -ServerIp 10.124.78.156
 ```
 
 It creates a private **MalDetect Local CA** and a certificate for the IP, points Apache to it (backup: `httpd-ssl.conf.maldetect-backup`), opens port **443** in the firewall, trusts the CA on Laptop 1, and saves the CA as `agent\maldetect-ca.crt`.
 
 **Step 3: Restart Apache.** In the XAMPP Control Panel click **Stop**, then **Start** next to **Apache**.
 
-**Step 4: Test in the browser on Laptop 1.** Open `https://192.168.0.63/threat2026/login.php`. It shows a padlock with no warning. (Close and reopen the browser if it still warns.)
+**Step 4: Test in the browser on Laptop 1.** Open `https://10.124.78.156/threat2026/login.php`. It shows a padlock with no warning. (Close and reopen the browser if it still warns.)
 
 **Step 5: Switch the agents to HTTPS.**
 
 - **Installed with install_agent.ps1:** rebuild with `agent\build_exe.bat` (it now also copies `maldetect-ca.crt` into `dist`), copy `dist` to the PC, and run the installer with **https**:
 
   ```powershell
-  powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl https://192.168.0.63/threat2026 -Token mdt_THE_TOKEN
+  powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl https://10.124.78.156/threat2026 -Token mdt_THE_TOKEN
   ```
 
   The installer finds `maldetect-ca.crt` next to it automatically.
 - **Running with Python by hand:** copy `agent\maldetect-ca.crt` into the agent folder on that PC, and in its `config.json` set:
 
   ```json
-  "server_url": "https://192.168.0.63/threat2026",
+  "server_url": "https://10.124.78.156/threat2026",
   "ca_file": "maldetect-ca.crt",
   ```
 
@@ -663,7 +663,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\check_network.ps1
 
 **Step 1: Get the code.** Do Part 1.
 
-**Step 2: Test.** Open `http://192.168.0.63/threat2026/agent/config.json` from another PC: it must say **Forbidden**. Sign in with a wrong password: the username stays filled in.
+**Step 2: Test.** Open `http://10.124.78.156/threat2026/agent/config.json` from another PC: it must say **Forbidden**. Sign in with a wrong password: the username stays filled in.
 
 ### Change 19: File activity monitoring (deleted, renamed, moved, created and modified files)
 
@@ -763,7 +763,7 @@ cd C:\xampp1\htdocs\threat2026\agent
 
 ```powershell
 cd E:\dist
-powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://192.168.0.63/threat2026 -Token mdt_THE_TOKEN_OF_THIS_PC
+powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://10.124.78.156/threat2026 -Token mdt_THE_TOKEN_OF_THIS_PC
 ```
 
 *With Python (Way B):* stop the agent (**Ctrl+C**), copy the new `agent\maldetect_agent.py` **and** `agent\file_activity.py` into the agent folder (keep `config.json`), then:
@@ -829,7 +829,7 @@ It returns one row.
 
 ```powershell
 $token = (Get-Content C:\MalDetectAgent\config.json -Raw | ConvertFrom-Json).device_token
-powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://192.168.0.63/threat2026 -Token $token
+powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://10.124.78.156/threat2026 -Token $token
 ```
 
 With Python (Way B), copy the new `maldetect_agent.py` and `file_activity.py` and restart the agent. `Get-Content C:\MalDetectAgent\agent.log -Tail 20` should show `MalDetect agent 1.4.1`.
@@ -842,19 +842,19 @@ With Python (Way B), copy the new `maldetect_agent.py` and `file_activity.py` an
 4. Wait a minute, then create `test2.log` on the PC's Desktop: it does **not** appear. A file `test2.txt` still appears.
 5. The agent log on the PC shows `Ignore list from the server updated`.
 
-### Change 21: Server address 192.168.0.63 in all guides
+### Change 21: Server address 10.124.78.156 in all guides
 
-**What changed:** the server's address in the guides, the examples and `agent\config.example.json` is now **`192.168.0.63`**, so every command can be copied as it is. The agents already installed keep their old address until you change it (Step 3).
+**What changed:** the server's address in the guides, the examples and `agent\config.example.json` is now **`10.124.78.156`**, so every command can be copied as it is. The agents already installed keep their old address until you change it (Step 3).
 
-New setting **`config\server.php`**: the server's address as the monitored PCs reach it, `http://192.168.0.63/threat2026`. The **Devices** page uses it: after **Register Device** (or **New token**) the green box now shows a ready-to-copy **install command** and agent config with this address, even when you opened MalDetect as `localhost`. If the server's IP changes later, do not edit the code: copy `config\server.local.example.php` to `config\server.local.php` and put the new address in it (NETWORK-GUIDE.md, Part 2).
+New setting **`config\server.php`**: the server's address as the monitored PCs reach it, `http://10.124.78.156/threat2026`. The **Devices** page uses it: after **Register Device** (or **New token**) the green box now shows a ready-to-copy **install command** and agent config with this address, even when you opened MalDetect as `localhost`. If the server's IP changes later, do not edit the code: copy `config\server.local.example.php` to `config\server.local.php` and put the new address in it (NETWORK-GUIDE.md, Part 2).
 
 **SQL to run:** none.
 
 **Step 1: Get the code.** Do Part 1.
 
-**Step 2: Check the server's IP.** On the server: `ipconfig`. Under the adapter you use (Wi-Fi or Ethernet), **IPv4 Address** must be `192.168.0.63`. (If **Default Gateway** shows `192.168.0.63`, that is the router, not your PC.) If it shows another address, use that one in Step 3, or give the server a fixed address (NETWORK-GUIDE.md, Part 3).
+**Step 2: Check the server's IP.** On the server: `ipconfig`. Under the adapter you use (Wi-Fi or Ethernet), **IPv4 Address** must be `10.124.78.156`. (If **Default Gateway** shows `10.124.78.156`, that is the router, not your PC.) If it shows another address, use that one in Step 3, or give the server a fixed address (NETWORK-GUIDE.md, Part 3).
 
-Then test from another PC (PowerShell): `Test-NetConnection 192.168.0.63 -Port 80` must show `TcpTestSucceeded : True`. If not, run this once on the server (PowerShell as Administrator):
+Then test from another PC (PowerShell): `Test-NetConnection 10.124.78.156 -Port 80` must show `TcpTestSucceeded : True`. If not, run this once on the server (PowerShell as Administrator):
 
 ```powershell
 New-NetFirewallRule -DisplayName "MalDetect HTTP 80" -Direction Inbound -Protocol TCP -LocalPort 80 -Action Allow -Profile Any
@@ -863,16 +863,16 @@ New-NetFirewallRule -DisplayName "MalDetect HTTP 80" -Direction Inbound -Protoco
 **Step 3: Point every agent to the new address.** On each monitored PC (and on the server itself if its own agent runs there), PowerShell as Administrator:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File C:\MalDetectAgent\change_server.ps1 -ServerUrl http://192.168.0.63/threat2026
+powershell -ExecutionPolicy Bypass -File C:\MalDetectAgent\change_server.ps1 -ServerUrl http://10.124.78.156/threat2026
 ```
 
-Within a minute, **Devices** shows the PCs **● Online**. With HTTPS, first run `tools\setup_https.ps1 -ServerIp 192.168.0.63` on the server (Change 15) and use `https://` above.
+Within a minute, **Devices** shows the PCs **● Online**. With HTTPS, first run `tools\setup_https.ps1 -ServerIp 10.124.78.156` on the server (Change 15) and use `https://` above.
 
-### Change 22: Installer uses 192.168.0.63 by itself, and a double-click installer
+### Change 22: Installer uses 10.124.78.156 by itself, and a double-click installer
 
 **What changed:**
 
-- `install_agent.ps1` and `change_server.ps1` use **`http://192.168.0.63/threat2026`** when `-ServerUrl` is left out.
+- `install_agent.ps1` and `change_server.ps1` use **`http://10.124.78.156/threat2026`** when `-ServerUrl` is left out.
 - `install_agent.ps1` no longer needs `-Token` on a PC that already has the agent: it keeps that PC's token.
 - New **`install_agent.bat`** in the `dist` folder: double-click it, allow Administrator rights, paste the token (or press **Enter** to keep the installed one).
 
@@ -942,6 +942,39 @@ Your accounts and the number of devices must appear. The old database `maldetect
 
 **Step 1: Get the code.** Do Part 1, then press **Ctrl+F5** in the browser.
 
+### Change 27: Server address 10.124.78.156
+
+**What changed:** the server address in the agent installer (`install_agent.ps1`, `install_agent.bat`), `change_server.ps1`, the agent's example settings, `config\server.php` (the install command on **Devices**) and all guides is now **`http://10.124.78.156/threat2026`**.
+
+**SQL to run:** none.
+
+**Step 1: Get the code.** Do Part 1.
+
+**Step 2: Check the server.** On the server: `ipconfig` must show **IPv4 Address `10.124.78.156`**. From a monitored PC: `Test-NetConnection 10.124.78.156 -Port 80` must show `TcpTestSucceeded : True` (firewall rule: NETWORK-GUIDE.md).
+
+**Step 3: Point every installed agent to the new address.** On each monitored PC, in **PowerShell as Administrator** (title bar "Administrator: Windows PowerShell"):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File C:\MalDetectAgent\change_server.ps1 -ServerUrl http://10.124.78.156/threat2026
+```
+
+It must say **"The server is reachable at the new address."** New PCs: rebuild `dist` with `agent\build_exe.bat`; the installer then uses the new address by itself.
+
+**If you cannot sign in** ("Invalid username or password"), reset the admin account and add a second one in phpMyAdmin (**SQL** tab, database `maldetect2026_db`):
+
+```sql
+USE maldetect2026_db;
+-- admin / ChangeMe123!
+UPDATE users SET password = '$2y$10$t3q.t.XP25XWds0wY9qhpOsR1WYJEY0sheuHWxjv8p1GBXTi8pWAC', is_active = 1 WHERE username = 'admin';
+-- New admin account: labadmin / MalDetect@2026
+INSERT INTO users (name, username, email, password, role, is_active)
+VALUES ('Lab Admin', 'labadmin', NULL, '$2y$10$vHpJjQd.USG3UTpjoTLIjOlzAsxQnyhIe320MFOA.o0QPCgMtfO3C', 'admin', 1)
+ON DUPLICATE KEY UPDATE password = VALUES(password), role = 'admin', is_active = 1;
+DELETE FROM login_attempts;
+```
+
+Change these passwords after signing in for real use.
+
 ---
 
 ## Part 3b: Test everything on one laptop (before the computer lab)
@@ -974,7 +1007,7 @@ Your laptop can be **both** the server and the monitored PC. This tests the whol
 
 6. Download any file in your browser. Within a few seconds the agent prints `Reported <file name>`, and the file appears in **Device Detections** with its risk and engine results. On **Devices**, `My Laptop` shows **● Online**.
 
-**Later, in the computer lab,** follow Part 4. The only differences are that the agent runs on the lab PCs, and `server_url` uses the server's IP address instead of `localhost` (for example `http://192.168.0.63/threat2026`).
+**Later, in the computer lab,** follow Part 4. The only differences are that the agent runs on the lab PCs, and `server_url` uses the server's IP address instead of `localhost` (for example `http://10.124.78.156/threat2026`).
 
 ---
 
@@ -982,7 +1015,7 @@ Your laptop can be **both** the server and the monitored PC. This tests the whol
 
 ### On the server PC (the one with XAMPP)
 
-1. Find its IP address: open Command Prompt, type `ipconfig`, and look for **IPv4 Address** (for example `192.168.0.63`).
+1. Find its IP address: open Command Prompt, type `ipconfig`, and look for **IPv4 Address** (for example `10.124.78.156`).
 2. Allow Apache through the firewall. Open **Windows Defender Firewall > Advanced settings > Inbound Rules > New Rule > Port > TCP 80 > Allow**, and name it `MalDetect`.
 3. Set your VirusTotal key. Create the file `config\scanner.local.php`:
 
@@ -997,12 +1030,12 @@ Your laptop can be **both** the server and the monitored PC. This tests the whol
 ### On the other PC or laptop
 
 1. Install Python from https://www.python.org/downloads/ and tick **"Add Python to PATH"** during setup.
-2. Check that it opens the server: open `http://192.168.0.63/threat2026/login.php` in a browser (use your server IP). If it does not open, check the firewall step.
+2. Check that it opens the server: open `http://10.124.78.156/threat2026/login.php` in a browser (use your server IP). If it does not open, check the firewall step.
 3. Copy the `agent` folder from the project to this PC, for example to `C:\MalDetectAgent`.
 4. In that folder, copy `config.example.json` and name the copy `config.json`. Open it in Notepad and change two lines:
 
    ```json
-   "server_url": "http://192.168.0.63/threat2026",
+   "server_url": "http://10.124.78.156/threat2026",
    "device_token": "mdt_the_token_you_copied",
    ```
 

@@ -52,7 +52,7 @@ You can run the script again safely. It keeps existing tables and accounts.
 | `phase13_file_activity.sql` | `file_activity_events`, monitored-folder columns on `devices` |
 | `phase14_activity_ignore.sql` | `devices.activity_ignore` (files and folders left out of file activity) |
 
-The server address shown to the monitored PCs (Devices page) is `http://192.168.0.63/threat2026`, set in `config/server.php`; override it in `config/server.local.php` or with `MALDETECT_SERVER_URL`.
+The server address shown to the monitored PCs (Devices page) is `http://10.124.78.156/threat2026`, set in `config/server.php`; override it in `config/server.local.php` or with `MALDETECT_SERVER_URL`.
 
 PHP connects with `127.0.0.1:3306`, database `maldetect2026_db`, user `root` and an empty password by default. If you use other values, set these environment variables: `MALDETECT_DB_HOST`, `MALDETECT_DB_PORT`, `MALDETECT_DB_NAME`, `MALDETECT_DB_USER`, `MALDETECT_DB_PASSWORD`.
 
@@ -89,7 +89,7 @@ The public API allows **4 requests per minute**, so MalDetect:
 
 The PCs must be able to open `http://<server-ip>/threat2026/` in a browser.
 
-- Find the server IP with `ipconfig` (Windows), for example `192.168.0.63`.
+- Find the server IP with `ipconfig` (Windows), for example `10.124.78.156`.
 - Allow Apache through the Windows Firewall (Inbound rule, TCP port 80, or 443 for HTTPS).
 - Use HTTPS if devices connect over an untrusted network, because the device token travels with each request.
 
@@ -106,7 +106,7 @@ cd agent
 copy config.example.json config.json      (on macOS/Linux: cp config.example.json config.json)
 ```
 
-Edit `config.json` and set `server_url` (for example `http://192.168.0.63/threat2026`) and `device_token`. Then run:
+Edit `config.json` and set `server_url` (for example `http://10.124.78.156/threat2026`) and `device_token`. Then run:
 
 ```text
 python maldetect_agent.py

@@ -6,7 +6,7 @@ There are two computers in this guide:
 
 | Name | What it is |
 | --- | --- |
-| **Server** | The PC with XAMPP and the MalDetect website (here `192.168.0.63`, project folder `C:\xampp1\htdocs\threat2026`). |
+| **Server** | The PC with XAMPP and the MalDetect website (here `10.124.78.156`, project folder `C:\xampp1\htdocs\threat2026`). |
 | **New PC** | The PC you want to monitor. It gets the **agent**, a small program that reports to the server. |
 
 Use your own XAMPP folder everywhere (for example `C:\xampp2` instead of `C:\xampp1`).
@@ -23,7 +23,7 @@ Use your own XAMPP folder everywhere (for example `C:\xampp2` instead of `C:\xam
 ipconfig
 ```
 
-**IPv4 Address** (Wi-Fi or Ethernet) should be `192.168.0.63`. If it is different, use that address everywhere below instead of `192.168.0.63`.
+**IPv4 Address** (Wi-Fi or Ethernet) should be `10.124.78.156`. If it is different, use that address everywhere below instead of `10.124.78.156`.
 
 **A3. Allow other PCs through the firewall.** Open **PowerShell as Administrator** (Start > type PowerShell > right-click > **Run as administrator**) and run:
 
@@ -72,7 +72,7 @@ Wait for **Done**. It needs Python on the server.
 **C1. Check that the new PC can reach the server.** Open **PowerShell** and run:
 
 ```powershell
-Test-NetConnection 192.168.0.63 -Port 80
+Test-NetConnection 10.124.78.156 -Port 80
 ```
 
 It must show **`TcpTestSucceeded : True`**. (A failed ping is normal; only this line matters.) If it says **False**: both PCs must be on the same network, and step A3 must be done on the server. See [NETWORK-GUIDE.md](NETWORK-GUIDE.md).
@@ -89,7 +89,7 @@ It must show **`TcpTestSucceeded : True`**. (A failed ping is normal; only this 
 cd $env:USERPROFILE\Desktop\dist
 dir
 Get-ChildItem -Recurse | Unblock-File
-powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://192.168.0.63/threat2026 -Token mdt_PASTE_THE_TOKEN
+powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://10.124.78.156/threat2026 -Token mdt_PASTE_THE_TOKEN
 ```
 
 - `dir` must list `MalDetectAgent.exe` and `install_agent.ps1`. If not, you are in the wrong folder: open the folder in File Explorer, copy the path from the address bar, and use `cd "PASTE_THE_PATH"`.
@@ -116,7 +116,7 @@ python --version
 cd C:\MalDetect\python-agent
 dir
 Get-ChildItem C:\MalDetect\python-agent | Unblock-File
-powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://192.168.0.63/threat2026 -Token mdt_PASTE_THE_TOKEN
+powershell -ExecutionPolicy Bypass -File .\install_agent.ps1 -ServerUrl http://10.124.78.156/threat2026 -Token mdt_PASTE_THE_TOKEN
 ```
 
 `dir` must list the six files. The installer sees there is no `.exe`, uses Python and installs `watchdog` by itself. Wait for **MalDetect agent installed.**

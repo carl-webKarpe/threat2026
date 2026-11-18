@@ -7,7 +7,7 @@ declare(strict_types=1);
  * config and the install command. Change it here when the server's IP changes, or without touching the code:
  * set MALDETECT_SERVER_URL, or create config/server.local.php (see server.local.example.php).
  */
-const MALDETECT_DEFAULT_SERVER_URL = 'http://192.168.0.63/threat2026';
+const MALDETECT_DEFAULT_SERVER_URL = 'http://10.124.78.156/threat2026';
 
 function maldetect_server_url(): string
 {
